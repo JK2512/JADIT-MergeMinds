@@ -1,0 +1,10 @@
+{
+  "ignore": [
+    "workspace-storage.json",
+    "public/**/*",
+    "workspace/**/*",
+    "workspace/*",
+    "workspace"
+  ],
+  "ext": "js,json"
+}

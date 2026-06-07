@@ -1,0 +1,1198 @@
+{
+  "files": {
+    "main.js": {
+      "content": "// Main Application Entry Point\n// GitLab Co-Pilot Live — Hackathon Demo Project\n\nimport config from './config.js';\nimport { setupRoutes } from './api.js';\nimport { connectDatabase } from './database.js';\n\nasync function initialize() {\n  console.log(`Starting ${config.app.name} v${config.app.version}`);\n\n  try {\n    await connectDatabase();\n    const app = express();\n    setupRoutes(app);\n\n    app.listen(config.app.port, () => {\n      console.log(`Server running on port ${config.app.port}`);\n    });\n  } catch (error) {\n    console.error('Failed to start application:', error);\n    process.exit(1);\n  }\n}\n\ninitialize();\n\n// Client A was here\n\n// Client A was here\n\n// Client A was here\n\n// Client A was here\n",
+      "lastModified": "2026-06-04T10:22:20.441Z",
+      "lastModifiedBy": "Developer A",
+      "lineCount": 34,
+      "size": 713,
+      "version": 12
+    },
+    "utils.js": {
+      "content": "// Utility Functions\n// Shared helpers used across the project\n\nexport function formatDate(date) {\n  return new Intl.DateTimeFormat('en-US', {\n    year: 'numeric',\n    month: 'short',\n    day: 'numeric',\n    hour: '2-digit',\n    minute: '2-digit'\n  }).format(date);\n}\n\nexport function generateId() {\n  return Math.random().toString(36).substring(2, 9);\n}\n\nexport function debounce(fn, delay) {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\n\nexport function validateEmail(email) {\n  const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  return re.test(email);\n}\n\nexport function slugify(text) {\n  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');\n}\n\nexport function deepClone(obj) {\n  return JSON.parse(JSON.stringify(obj));\n}\n",
+      "lastModified": "2026-06-03T03:18:22.235Z",
+      "lastModifiedBy": "system",
+      "lineCount": 38,
+      "size": 817,
+      "version": 8
+    },
+    "config.js": {
+      "content": "// Project Configuration\n// Environment and application settings\n\nconst config = {\n  app: {\n    name: 'GitLab Co-Pilot Demo',\n    version: '1.0.0',\n    port: process.env.PORT || 3000,\n    env: process.env.NODE_ENV || 'development'\n  },\n  database: {\n    host: process.env.DB_HOST || 'localhost',\n    port: parseInt(process.env.DB_PORT) || 5432,\n    name: process.env.DB_NAME || 'copilot_db',\n    pool: { min: 2, max: 10 }\n  },\n  auth: {\n    jwtSecret: process.env.JWT_SECRET || 'change-me-in-production',\n    tokenExpiry: '24h',\n    bcryptRounds: 12\n  },\n  gitlab: {\n    url: process.env.GITLAB_URL || 'https://gitlab.com',\n    projectId: process.env.GITLAB_PROJECT_ID || ''\n  }\n};\n\nexport default config;\n",
+      "lastModified": "2026-06-03T03:18:22.236Z",
+      "lastModifiedBy": "system",
+      "lineCount": 29,
+      "size": 706,
+      "version": 8
+    },
+    "api.js": {
+      "content": "// API Routes\n// REST endpoint handlers for the demo application\n\nimport { validateEmail } from './utils.js';\n\nconst users = [];\nconst projects = [];\n\nexport function setupRoutes(app) {\n\n  // Health check\n  app.get('/health', (req, res) => {\n    res.json({\n      status: 'ok',\n      uptime: process.uptime(),\n      timestamp: new Date().toISOString()\n    });\n  });\n\n  // User endpoints\n  app.get('/api/users', (req, res) => {\n    res.json({ users, total: users.length });\n  });\n\n  app.post('/api/users', (req, res) => {\n    const { name, email, role } = req.body;\n\n    if (!name || !email) {\n      return res.status(400).json({ error: 'Name and email are required' });\n    }\n\n    if (!validateEmail(email)) {\n      return res.status(400).json({ error: 'Invalid email format' });\n    }\n\n    const newUser = {\n      id: users.length + 1,\n      name,\n      email,\n      role: role || 'developer',\n      createdAt: new Date().toISOString()\n    };\n\n    users.push(newUser);\n    res.status(201).json(newUser);\n  });\n\n  // Project endpoints\n  app.get('/api/projects', (req, res) => {\n    res.json({ projects, total: projects.length });\n  });\n\n  app.post('/api/projects', (req, res) => {\n    const { name, description } = req.body;\n\n    if (!name) {\n      return res.status(400).json({ error: 'Project name is required' });\n    }\n\n    const project = {\n      id: projects.length + 1,\n      name,\n      description: description || '',\n      status: 'active',\n      createdAt: new Date().toISOString()\n    };\n\n    projects.push(project);\n    res.status(201).json(project);\n  });\n}\n",
+      "lastModified": "2026-06-03T03:18:22.237Z",
+      "lastModifiedBy": "system",
+      "lineCount": 72,
+      "size": 1571,
+      "version": 8
+    },
+    "database.js": {
+      "content": "// Database Connection\n// Handles database initialization and connection pooling\n\nlet isConnected = false;\n\nexport async function connectDatabase() {\n  console.log('Connecting to database...');\n\n  // Simulated connection delay\n  await new Promise(resolve => setTimeout(resolve, 100));\n\n  isConnected = true;\n  console.log('Database connected successfully');\n\n  return { isConnected };\n}\n\nexport async function query(sql, params = []) {\n  if (!isConnected) {\n    throw new Error('Database not connected');\n  }\n\n  // TODO: Implement actual database queries\n  console.log('Executing query:', sql);\n  return { rows: [], rowCount: 0 };\n}\n\nexport async function disconnect() {\n  isConnected = false;\n  console.log('Database disconnected');\n}\n",
+      "lastModified": "2026-06-03T03:18:22.239Z",
+      "lastModifiedBy": "system",
+      "lineCount": 32,
+      "size": 736,
+      "version": 8
+    },
+    "auth.js": {
+      "content": "// Auth Helper\n",
+      "lastModified": "2026-06-03T11:50:58.322Z",
+      "lastModifiedBy": "Developer A",
+      "lineCount": 2,
+      "size": 15,
+      "version": 1
+    },
+    "jk.html": {
+      "content": "// jk.html\n",
+      "lastModified": "2026-06-04T07:35:42.099Z",
+      "lastModifiedBy": "JK",
+      "lineCount": 2,
+      "size": 11,
+      "version": 1
+    },
+    "hi.cpp": {
+      "content": "#include <iostream>\nusing namespace std;\nint main() {\n    cout << \"GitLab Co-Pilot Live: Build successful!\" << endl;\n    return 0;\n}\n",
+      "lastModified": "2026-06-04T12:07:47.269Z",
+      "lastModifiedBy": "devops",
+      "lineCount": 7,
+      "size": 133,
+      "version": 177
+    },
+    "mm.js": {
+      "content": "// mm.js\n",
+      "lastModified": "2026-06-04T07:36:09.227Z",
+      "lastModifiedBy": "JK",
+      "lineCount": 2,
+      "size": 9,
+      "version": 1
+    }
+  },
+  "activityLog": [
+    {
+      "id": "mpxhy1w7e84aear",
+      "user": "system",
+      "action": "created_file",
+      "target": "main.js",
+      "details": {
+        "lineCount": 26
+      },
+      "timestamp": "2026-06-03T03:18:14.551Z"
+    },
+    {
+      "id": "mpxhy1w8iqb4zws",
+      "user": "system",
+      "action": "created_file",
+      "target": "utils.js",
+      "details": {
+        "lineCount": 38
+      },
+      "timestamp": "2026-06-03T03:18:14.552Z"
+    },
+    {
+      "id": "mpxhy1wa9bxnz0n",
+      "user": "system",
+      "action": "created_file",
+      "target": "config.js",
+      "details": {
+        "lineCount": 29
+      },
+      "timestamp": "2026-06-03T03:18:14.554Z"
+    },
+    {
+      "id": "mpxhy1wct7rzf3r",
+      "user": "system",
+      "action": "created_file",
+      "target": "api.js",
+      "details": {
+        "lineCount": 72
+      },
+      "timestamp": "2026-06-03T03:18:14.556Z"
+    },
+    {
+      "id": "mpxhy1wd3hjkfdo",
+      "user": "system",
+      "action": "created_file",
+      "target": "database.js",
+      "details": {
+        "lineCount": 32
+      },
+      "timestamp": "2026-06-03T03:18:14.557Z"
+    },
+    {
+      "id": "mpy099xqak45r48",
+      "user": "Jiya",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:51.278Z"
+    },
+    {
+      "id": "mpy099xu3bo2w7r",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:51.282Z"
+    },
+    {
+      "id": "mpy099y4gy6gbmf",
+      "user": "Jiya",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:51.292Z"
+    },
+    {
+      "id": "mpy09d06s7eh8we",
+      "user": "Developer A",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:55.254Z"
+    },
+    {
+      "id": "mpy09d0c36eahjc",
+      "user": "Developer B",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:55.260Z"
+    },
+    {
+      "id": "mpy09d0e15c8708",
+      "user": "Developer C",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:55.262Z"
+    },
+    {
+      "id": "mpy09fdebbqvh4l",
+      "user": "Developer A",
+      "action": "created_file",
+      "target": "auth.js",
+      "details": {
+        "lineCount": 2
+      },
+      "timestamp": "2026-06-03T11:50:58.322Z"
+    },
+    {
+      "id": "mpy09fdh5homuz7",
+      "user": "Developer A",
+      "action": "created_file",
+      "target": "auth.js",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:58.325Z"
+    },
+    {
+      "id": "mpy09ghyklyix6b",
+      "user": "Developer A",
+      "action": "edited",
+      "target": "main.js",
+      "details": {
+        "lineCount": 28,
+        "size": 647
+      },
+      "timestamp": "2026-06-03T11:50:59.782Z"
+    },
+    {
+      "id": "mpy09gjxdb08ymc",
+      "user": "Developer A",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:59.853Z"
+    },
+    {
+      "id": "mpy09gjze5n6oy4",
+      "user": "Developer B",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:59.855Z"
+    },
+    {
+      "id": "mpy09gk0u2v1fre",
+      "user": "Developer C",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:50:59.856Z"
+    },
+    {
+      "id": "mpy0a1spjf19ro5",
+      "user": "Developer A",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:51:27.385Z"
+    },
+    {
+      "id": "mpy0a1t31x5nlvx",
+      "user": "Developer B",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:51:27.399Z"
+    },
+    {
+      "id": "mpy0a1t5z6xvmeb",
+      "user": "Developer C",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-03T11:51:27.401Z"
+    },
+    {
+      "id": "mpz6k5mswdxiyw4",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T07:35:02.788Z"
+    },
+    {
+      "id": "mpz6kzyr5bf4l3y",
+      "user": "JK",
+      "action": "created_file",
+      "target": "jk.html",
+      "details": {
+        "lineCount": 2
+      },
+      "timestamp": "2026-06-04T07:35:42.099Z"
+    },
+    {
+      "id": "mpz6kzywww2deyy",
+      "user": "JK",
+      "action": "created_file",
+      "target": "jk.html",
+      "details": null,
+      "timestamp": "2026-06-04T07:35:42.104Z"
+    },
+    {
+      "id": "mpz6l2nfl2r15om",
+      "user": "JK",
+      "action": "opened",
+      "target": "jk.html",
+      "details": null,
+      "timestamp": "2026-06-04T07:35:45.579Z"
+    },
+    {
+      "id": "mpz6labnqt0k54w",
+      "user": "JK",
+      "action": "created_file",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 2
+      },
+      "timestamp": "2026-06-04T07:35:55.523Z"
+    },
+    {
+      "id": "mpz6labsebz2h45",
+      "user": "JK",
+      "action": "created_file",
+      "target": "hi.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T07:35:55.528Z"
+    },
+    {
+      "id": "mpz6ld28xd8g4d0",
+      "user": "JK",
+      "action": "opened",
+      "target": "hi.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T07:35:59.072Z"
+    },
+    {
+      "id": "mpz6lg02kw5f284",
+      "user": "JK",
+      "action": "opened",
+      "target": "config.js",
+      "details": null,
+      "timestamp": "2026-06-04T07:36:02.882Z"
+    },
+    {
+      "id": "mpz6lkwbqrbno95",
+      "user": "JK",
+      "action": "created_file",
+      "target": "mm.js",
+      "details": {
+        "lineCount": 2
+      },
+      "timestamp": "2026-06-04T07:36:09.227Z"
+    },
+    {
+      "id": "mpz6lkwl3162mh9",
+      "user": "JK",
+      "action": "created_file",
+      "target": "mm.js",
+      "details": null,
+      "timestamp": "2026-06-04T07:36:09.238Z"
+    },
+    {
+      "id": "mpz6lp0vi6yoetp",
+      "user": "JK",
+      "action": "opened",
+      "target": "hi.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T07:36:14.575Z"
+    },
+    {
+      "id": "mpz6mbh9ddw5yfp",
+      "user": "JK",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 4,
+        "size": 57
+      },
+      "timestamp": "2026-06-04T07:36:43.677Z"
+    },
+    {
+      "id": "mpz6mi8knp3v3qu",
+      "user": "JK",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 4,
+        "size": 77
+      },
+      "timestamp": "2026-06-04T07:36:52.436Z"
+    },
+    {
+      "id": "mpz7b4bh2sdl2vn",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T07:56:00.797Z"
+    },
+    {
+      "id": "mpz7b4fzrgxblaf",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T07:56:00.960Z"
+    },
+    {
+      "id": "mpz7hcj5gqus0nq",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:00:51.377Z"
+    },
+    {
+      "id": "mpz7hegc5j7v6tr",
+      "user": "JK",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:00:53.868Z"
+    },
+    {
+      "id": "mpz7hg5979h2hcy",
+      "user": "JK",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:00:56.061Z"
+    },
+    {
+      "id": "mpz7hx8zevj0alf",
+      "user": "JK",
+      "action": "opened",
+      "target": "hi.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:01:18.227Z"
+    },
+    {
+      "id": "mpz7mo1lxu8u89g",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:04:59.577Z"
+    },
+    {
+      "id": "mpz7mshnhsyzf6v",
+      "user": "Mnager",
+      "action": "opened",
+      "target": "hi.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:05:05.339Z"
+    },
+    {
+      "id": "mpz7mwzseg4z2ys",
+      "user": "Mnager",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 4,
+        "size": 54
+      },
+      "timestamp": "2026-06-04T08:05:11.176Z"
+    },
+    {
+      "id": "mpz86swmtcw9cu6",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:20:38.998Z"
+    },
+    {
+      "id": "mpz86sx0p1n1qgc",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:20:39.012Z"
+    },
+    {
+      "id": "mpz874qxqcvt3yh",
+      "user": "Developer B",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:20:54.345Z"
+    },
+    {
+      "id": "mpz874rj62a6k35",
+      "user": "Developer A",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:20:54.367Z"
+    },
+    {
+      "id": "mpz874rlv0mp9uj",
+      "user": "Developer C",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:20:54.369Z"
+    },
+    {
+      "id": "mpz994lmo0zxymz",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:50:27.082Z"
+    },
+    {
+      "id": "mpz994m2s8g9h8i",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:50:27.098Z"
+    },
+    {
+      "id": "mpz9ax8m9614cqz",
+      "user": "Tester",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:51:50.854Z"
+    },
+    {
+      "id": "mpz9axa4hw0zljy",
+      "user": "disk",
+      "action": "created_file",
+      "target": "hello_test.cpp",
+      "details": {
+        "lineCount": 6
+      },
+      "timestamp": "2026-06-04T08:51:50.909Z"
+    },
+    {
+      "id": "mpz9axadf6cm2zj",
+      "user": "disk",
+      "action": "created_file",
+      "target": "syntax_test.cpp",
+      "details": {
+        "lineCount": 1
+      },
+      "timestamp": "2026-06-04T08:51:50.917Z"
+    },
+    {
+      "id": "mpz9b3fd6zq1s3u",
+      "user": "Tester",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:51:58.873Z"
+    },
+    {
+      "id": "mpz9b3i48u6rzef",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "hello_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:51:58.972Z"
+    },
+    {
+      "id": "mpz9b3i75o1r3ea",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "syntax_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:51:58.975Z"
+    },
+    {
+      "id": "mpz9c2l24s21jke",
+      "user": "disk",
+      "action": "created_file",
+      "target": "temp.cpp",
+      "details": {
+        "lineCount": 6
+      },
+      "timestamp": "2026-06-04T08:52:44.438Z"
+    },
+    {
+      "id": "mpz9czljh08dgek",
+      "user": "Tester",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:53:27.223Z"
+    },
+    {
+      "id": "mpz9czn0drytk2a",
+      "user": "disk",
+      "action": "created_file",
+      "target": "hello_test.cpp",
+      "details": {
+        "lineCount": 6
+      },
+      "timestamp": "2026-06-04T08:53:27.276Z"
+    },
+    {
+      "id": "mpz9czn5n60f8vx",
+      "user": "disk",
+      "action": "created_file",
+      "target": "syntax_test.cpp",
+      "details": {
+        "lineCount": 1
+      },
+      "timestamp": "2026-06-04T08:53:27.281Z"
+    },
+    {
+      "id": "mpz9daev32z8l0t",
+      "user": "Tester",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:53:41.239Z"
+    },
+    {
+      "id": "mpz9dahl5y8ovti",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "hello_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:53:41.337Z"
+    },
+    {
+      "id": "mpz9daho5o273ma",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "syntax_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:53:41.340Z"
+    },
+    {
+      "id": "mpz9dp69kj7f8bq",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "temp.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:54:00.369Z"
+    },
+    {
+      "id": "mpz9i68swdqggju",
+      "user": "JK",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:57:29.116Z"
+    },
+    {
+      "id": "mpz9ib5wk4gfn3s",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T08:57:35.492Z"
+    },
+    {
+      "id": "mpz9imjpnk026k8",
+      "user": "JK",
+      "action": "opened",
+      "target": "jk.html",
+      "details": null,
+      "timestamp": "2026-06-04T08:57:50.245Z"
+    },
+    {
+      "id": "mpz9iuc48a3mr91",
+      "user": "JK",
+      "action": "opened",
+      "target": "hi.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:58:00.340Z"
+    },
+    {
+      "id": "mpz9j1l6awrnom7",
+      "user": "JK",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 3,
+        "size": 52
+      },
+      "timestamp": "2026-06-04T08:58:09.738Z"
+    },
+    {
+      "id": "mpz9j9bkg3il3kr",
+      "user": "JK",
+      "action": "opened",
+      "target": "jk.html",
+      "details": null,
+      "timestamp": "2026-06-04T08:58:19.760Z"
+    },
+    {
+      "id": "mpz9jdwjb4sixra",
+      "user": "JK",
+      "action": "opened",
+      "target": "config.js",
+      "details": null,
+      "timestamp": "2026-06-04T08:58:25.699Z"
+    },
+    {
+      "id": "mpz9jpkat8z2r2p",
+      "user": "JK",
+      "action": "opened",
+      "target": "hi.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T08:58:40.810Z"
+    },
+    {
+      "id": "mpz9k4lk505e9a1",
+      "user": "JK",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 8,
+        "size": 92
+      },
+      "timestamp": "2026-06-04T08:59:00.296Z"
+    },
+    {
+      "id": "mpz9kpelgv97rja",
+      "user": "Mnager",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 5,
+        "size": 64
+      },
+      "timestamp": "2026-06-04T08:59:27.261Z"
+    },
+    {
+      "id": "mpz9kuvsv0nhy77",
+      "user": "JK",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 5,
+        "size": 56
+      },
+      "timestamp": "2026-06-04T08:59:34.360Z"
+    },
+    {
+      "id": "mpz9l7g9pj49bpt",
+      "user": "Mnager",
+      "action": "edited",
+      "target": "hi.cpp",
+      "details": {
+        "lineCount": 3,
+        "size": 48
+      },
+      "timestamp": "2026-06-04T08:59:50.649Z"
+    },
+    {
+      "id": "mpzchaold9i92hb",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:20:47.061Z"
+    },
+    {
+      "id": "mpzchaqa8z7m4fa",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:20:47.122Z"
+    },
+    {
+      "id": "mpzcj9jnpwgpvgp",
+      "user": "Developer B",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:22:18.900Z"
+    },
+    {
+      "id": "mpzcj9k3pkhwwzh",
+      "user": "Developer C",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:22:18.915Z"
+    },
+    {
+      "id": "mpzcj9kion3hhul",
+      "user": "Developer A",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:22:18.930Z"
+    },
+    {
+      "id": "mpzcjd20a840od4",
+      "user": "Developer A",
+      "action": "edited",
+      "target": "main.js",
+      "details": {
+        "lineCount": 34,
+        "size": 713
+      },
+      "timestamp": "2026-06-04T10:22:23.448Z"
+    },
+    {
+      "id": "mpzcjd72ls7r7hh",
+      "user": "Developer A",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:22:23.630Z"
+    },
+    {
+      "id": "mpzcjd74ag8c2ez",
+      "user": "Developer C",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:22:23.632Z"
+    },
+    {
+      "id": "mpzcjd75nufswdg",
+      "user": "Developer B",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:22:23.633Z"
+    },
+    {
+      "id": "mpzckmwpu5u1sem",
+      "user": "Tester",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:23:22.873Z"
+    },
+    {
+      "id": "mpzckmy2htjpe6c",
+      "user": "disk",
+      "action": "created_file",
+      "target": "hello_test.cpp",
+      "details": {
+        "lineCount": 6
+      },
+      "timestamp": "2026-06-04T10:23:22.922Z"
+    },
+    {
+      "id": "mpzckmydsoqmv22",
+      "user": "disk",
+      "action": "created_file",
+      "target": "syntax_test.cpp",
+      "details": {
+        "lineCount": 1
+      },
+      "timestamp": "2026-06-04T10:23:22.933Z"
+    },
+    {
+      "id": "mpzckxqn17c5p2c",
+      "user": "Tester",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T10:23:36.911Z"
+    },
+    {
+      "id": "mpzckxt2ykpdgo7",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "hello_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T10:23:36.998Z"
+    },
+    {
+      "id": "mpzejnbclybp83g",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T11:18:35.976Z"
+    },
+    {
+      "id": "mpzf1pi9jid047a",
+      "user": "Tester",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T11:32:38.625Z"
+    },
+    {
+      "id": "mpzf1pjfa4yxeh7",
+      "user": "disk",
+      "action": "created_file",
+      "target": "hello_test.cpp",
+      "details": {
+        "lineCount": 6
+      },
+      "timestamp": "2026-06-04T11:32:38.667Z"
+    },
+    {
+      "id": "mpzf1pjozi1gli4",
+      "user": "disk",
+      "action": "created_file",
+      "target": "syntax_test.cpp",
+      "details": {
+        "lineCount": 1
+      },
+      "timestamp": "2026-06-04T11:32:38.676Z"
+    },
+    {
+      "id": "mpzf20b8moc42u1",
+      "user": "Tester",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T11:32:52.628Z"
+    },
+    {
+      "id": "mpzf20e8u5u7idw",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "hello_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T11:32:52.736Z"
+    },
+    {
+      "id": "mpzf20ea6pqo11e",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "syntax_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T11:32:52.738Z"
+    },
+    {
+      "id": "mpzf2621ukhsndq",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T11:33:00.073Z"
+    },
+    {
+      "id": "mpzf263bewdajtm",
+      "user": "Devops Specialist",
+      "action": "pipeline_failed",
+      "target": "hi.cpp",
+      "details": {
+        "error": "expected primary-expression before \"Incomplete\"",
+        "pipelineId": "#9984"
+      },
+      "timestamp": "2026-06-04T11:33:00.120Z"
+    },
+    {
+      "id": "mpzf2641hb94dwi",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T11:33:00.145Z"
+    },
+    {
+      "id": "mpzf2two85uyyso",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T11:33:30.984Z"
+    },
+    {
+      "id": "mpzf30ms1m5lr6y",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T11:33:39.700Z"
+    },
+    {
+      "id": "mpzf30nugrwslwu",
+      "user": "Devops Specialist",
+      "action": "pipeline_failed",
+      "target": "hi.cpp",
+      "details": {
+        "error": "expected primary-expression before \"Incomplete\"",
+        "pipelineId": "#9984"
+      },
+      "timestamp": "2026-06-04T11:33:39.738Z"
+    },
+    {
+      "id": "mpzf30oa6y4ka02",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T11:33:39.754Z"
+    },
+    {
+      "id": "mpzf9rdlgc73py8",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T11:38:54.297Z"
+    },
+    {
+      "id": "mpzf9z2a9fajiri",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T11:39:04.258Z"
+    },
+    {
+      "id": "mpzg3h7y6ak22rg",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T12:02:00.814Z"
+    },
+    {
+      "id": "mpzg3h93fora4f3",
+      "user": "Devops Specialist",
+      "action": "pipeline_failed",
+      "target": "hi.cpp",
+      "details": {
+        "error": "expected primary-expression before \"Incomplete\"",
+        "pipelineId": "#9984"
+      },
+      "timestamp": "2026-06-04T12:02:00.855Z"
+    },
+    {
+      "id": "mpzg3h9t90tiln2",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T12:02:00.881Z"
+    },
+    {
+      "id": "mpzg3qet3wx74y1",
+      "user": "Tester",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T12:02:12.725Z"
+    },
+    {
+      "id": "mpzg3qfo35vgfp5",
+      "user": "disk",
+      "action": "created_file",
+      "target": "hello_test.cpp",
+      "details": {
+        "lineCount": 6
+      },
+      "timestamp": "2026-06-04T12:02:12.756Z"
+    },
+    {
+      "id": "mpzg3qg05ekn1pn",
+      "user": "disk",
+      "action": "created_file",
+      "target": "syntax_test.cpp",
+      "details": {
+        "lineCount": 1
+      },
+      "timestamp": "2026-06-04T12:02:12.768Z"
+    },
+    {
+      "id": "mpzg4188lddocsw",
+      "user": "Tester",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T12:02:26.744Z"
+    },
+    {
+      "id": "mpzg41b76uv1joi",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "hello_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T12:02:26.851Z"
+    },
+    {
+      "id": "mpzgawhuo0mi330",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T12:07:47.202Z"
+    },
+    {
+      "id": "mpzgawj8ls7lsn6",
+      "user": "Devops Specialist",
+      "action": "pipeline_failed",
+      "target": "hi.cpp",
+      "details": {
+        "error": "expected primary-expression before \"Incomplete\"",
+        "pipelineId": "#9984"
+      },
+      "timestamp": "2026-06-04T12:07:47.252Z"
+    },
+    {
+      "id": "mpzgawjslk7iqlr",
+      "user": "Devops Specialist",
+      "action": "pipeline_passed",
+      "target": "hi.cpp",
+      "details": {
+        "message": "All unit tests and builds successful",
+        "pipelineId": "#9985"
+      },
+      "timestamp": "2026-06-04T12:07:47.272Z"
+    },
+    {
+      "id": "mpzgb5gvc027gyf",
+      "user": "Tester",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T12:07:58.831Z"
+    },
+    {
+      "id": "mpzgb5gy4n832iy",
+      "user": "disk",
+      "action": "created_file",
+      "target": "hello_test.cpp",
+      "details": {
+        "lineCount": 6
+      },
+      "timestamp": "2026-06-04T12:07:58.834Z"
+    },
+    {
+      "id": "mpzgb5h8dqx5uux",
+      "user": "disk",
+      "action": "created_file",
+      "target": "syntax_test.cpp",
+      "details": {
+        "lineCount": 1
+      },
+      "timestamp": "2026-06-04T12:07:58.844Z"
+    },
+    {
+      "id": "mpzgba7mel05x98",
+      "user": "Mnager",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T12:08:04.978Z"
+    },
+    {
+      "id": "mpzgba9v24tqowy",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T12:08:05.059Z"
+    },
+    {
+      "id": "mpzgbg9fwrx8tm5",
+      "user": "Tester",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-04T12:08:12.819Z"
+    },
+    {
+      "id": "mpzgbgca7wd0fks",
+      "user": "disk",
+      "action": "deleted_file",
+      "target": "hello_test.cpp",
+      "details": null,
+      "timestamp": "2026-06-04T12:08:12.922Z"
+    }
+  ],
+  "userStats": {
+    "Developer A": {
+      "edits": 5,
+      "filesModified": [
+        "main.js"
+      ]
+    },
+    "JK": {
+      "edits": 132,
+      "filesModified": [
+        "hi.cpp"
+      ]
+    },
+    "Mnager": {
+      "edits": 35,
+      "filesModified": [
+        "hi.cpp"
+      ]
+    },
+    "devops": {
+      "edits": 12,
+      "filesModified": [
+        "hi.cpp"
+      ]
+    }
+  }
+}

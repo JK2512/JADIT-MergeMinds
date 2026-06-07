@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "gitlab": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@gitlab/mcp-server"
+            ],
+            "env": {
+                "GITLAB_PRIVATE_TOKEN": "glpat-PT96gB4mCx5M49HP77PlW2M6MQpvOjEKdTpuMjQ4aw8.01.170tlz2tq",
+                "GITLAB_URL": "https://gitlab.com",
+                "GITLAB_PROJECT_ID": "jiyakathuria2512-group/jiyakathuria2512-project"
+            }
+        }
+    }
+}
