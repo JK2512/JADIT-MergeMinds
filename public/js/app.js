@@ -18,6 +18,7 @@ class WorkspaceApp {
     this.connectionId = null;
     this.currentFile = 'main.js';
     this.files = [];
+    this.fileContents = {};
     this.reconnectTimer = null;
     this.isReconnecting = false;
 
@@ -67,7 +68,11 @@ class WorkspaceApp {
 
       // 3. Initialize AI Panel
       this.aiPanel = new AIPanel(this);
-      this.aiPanel.init();
+      try {
+        this.aiPanel.init();
+      } catch (err) {
+        console.warn('AI panel controls failed to initialize; continuing workspace startup:', err);
+      }
 
       // Initialize debugging panel state
       this.updateDebugPanel();
@@ -86,10 +91,20 @@ class WorkspaceApp {
         throw new Error(`Failed to fetch project: HTTP ${res.status}`);
       }
       const projData = await res.json();
+      this.fileContents = projData.files || {};
       this.files = Object.keys(projData.files || {});
+      if (!this.files.includes(this.currentFile) && this.files.length > 0) {
+        this.currentFile = this.files[0];
+      }
       console.log("FETCH_PROJECT_SUCCESS");
 
       // Render the initial file list
+      this.editor.bindDocument(this.fileContents[this.currentFile] || '');
+      this.editor.setLanguageForFile(this.currentFile);
+      this.layoutEditorSoon();
+      if (this.currentFileEl) {
+        this.currentFileEl.textContent = this.currentFile;
+      }
       this.renderFileTabs();
       this.renderFileExplorer();
 
@@ -162,7 +177,8 @@ class WorkspaceApp {
     // Load persisted height
     const savedHeight = localStorage.getItem('terminal_height');
     if (savedHeight) {
-      bottomPanels.style.height = `${savedHeight}px`;
+      const finalSavedHeight = Math.min(350, Math.max(120, parseInt(savedHeight, 10) || 180));
+      bottomPanels.style.height = `${finalSavedHeight}px`;
     }
 
     resizer.addEventListener('mousedown', (e) => {
@@ -173,7 +189,7 @@ class WorkspaceApp {
     window.addEventListener('mousemove', (e) => {
       if (!isResizing) return;
       const height = window.innerHeight - e.clientY - 28; // 28 is status bar height
-      const finalHeight = Math.min(400, Math.max(120, height));
+      const finalHeight = Math.min(350, Math.max(120, height));
       bottomPanels.style.height = `${finalHeight}px`;
     });
 
@@ -210,9 +226,10 @@ class WorkspaceApp {
       this.ws.close();
     }
 
-    // Bind empty document and set language
-    this.editor.bindDocument(null);
+    // Bind locally cached content first; the server sync update will refine it when available.
+    this.editor.bindDocument(this.fileContents[this.currentFile] || '');
     this.editor.setLanguageForFile(this.currentFile);
+    this.layoutEditorSoon();
     if (this.currentFileEl) {
       this.currentFileEl.textContent = this.currentFile;
     }
@@ -307,7 +324,7 @@ class WorkspaceApp {
         break;
 
       case 'fileList':
-        this.files = msg.files;
+        this.files = Array.isArray(msg.files) ? msg.files : Object.keys(msg.files || {});
         console.log('FILES_FETCHED');
         this.renderFileTabs();
         this.renderFileExplorer();
@@ -343,29 +360,7 @@ class WorkspaceApp {
         break;
 
       case 'activityHistory':
-        if (this.activityListEl) {
-          this.activityListEl.innerHTML = '';
-          msg.events.reverse().forEach(e => this.appendActivityEvent(e));
-        }
-        // Also update commits list if it's the commits panel
-        const commitsList = document.getElementById('commits-list');
-        if (commitsList) {
-          commitsList.innerHTML = '';
-          msg.events.filter(e => e.action !== 'joined' && e.action !== 'left')
-                   .forEach(e => {
-                     const item = document.createElement('div');
-                     item.className = 'activity-item';
-                     item.innerHTML = `
-                       <div class="activity-content">
-                         <span class="activity-user">${e.user}</span>
-                         ${e.action === 'created_file' ? ' created ' : ' edited '}
-                         <span class="activity-target" style="color:var(--accent-color)">${e.target}</span>
-                         <span class="activity-time">${this.formatTime(e.timestamp)}</span>
-                       </div>
-                     `;
-                     commitsList.appendChild(item);
-                   });
-        }
+        this.renderActivityHistory(msg.events || []);
         break;
 
       case 'remoteCursor':
@@ -376,8 +371,9 @@ class WorkspaceApp {
 
       case 'fileChanged':
         this.currentFile = msg.file;
-        this.editor.bindDocument(null);
+        this.editor.bindDocument(this.fileContents[msg.file] || '');
         this.editor.setLanguageForFile(msg.file);
+        this.layoutEditorSoon();
         if (this.currentFileEl) {
           this.currentFileEl.textContent = msg.file;
         }
@@ -437,7 +433,18 @@ class WorkspaceApp {
   }
 
   fetchActivityHistory() {
-    this.sendJSON({ type: 'getActivityHistory' });
+    fetch('/api/project/activity?count=50')
+      .then(res => res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`)))
+      .then(data => this.renderActivityHistory(data.events || []))
+      .catch(err => {
+        console.warn('REST activity history failed, falling back to websocket:', err);
+        this.sendJSON({ type: 'getActivityHistory' });
+      });
+  }
+
+  layoutEditorSoon() {
+    requestAnimationFrame(() => this.editor?.layout?.());
+    setTimeout(() => this.editor?.layout?.(), 150);
   }
 
   switchFile(fileName) {
@@ -448,9 +455,10 @@ class WorkspaceApp {
     this.renderFileTabs();
     this.renderFileExplorer();
 
-    // Bind empty document and set language
-    this.editor.bindDocument(null);
+    // Bind locally cached content first; live sync updates will follow when connected.
+    this.editor.bindDocument(this.fileContents[fileName] || '');
     this.editor.setLanguageForFile(fileName);
+    this.layoutEditorSoon();
     if (this.currentFileEl) {
       this.currentFileEl.textContent = fileName;
     }
@@ -466,6 +474,22 @@ class WorkspaceApp {
   // ── Local Change Handlers ────────────────────────────────
   
   handleLocalContentChange(update) {
+    if (typeof update === 'string') {
+      this.fileContents[this.currentFile] = update;
+      clearTimeout(this.fallbackSaveTimer);
+      this.fallbackSaveTimer = setTimeout(() => {
+        fetch('/api/project/update-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: this.currentFile,
+            content: update,
+            userName: this.presence?.currentUser?.name || 'local'
+          })
+        }).catch((err) => console.warn('Fallback editor save failed:', err));
+      }, 500);
+      return;
+    }
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log(`📤 UPDATE_SENT file=${this.currentFile} size=${update.byteLength || update.length || 0}`);
       this.ws.send(update);
@@ -697,6 +721,35 @@ class WorkspaceApp {
 
     // Insert at top of activity feed (chronological reverse)
     this.activityListEl.insertBefore(item, this.activityListEl.firstChild);
+  }
+
+  renderActivityHistory(events) {
+    const ordered = [...events].reverse();
+
+    if (this.activityListEl) {
+      this.activityListEl.innerHTML = '';
+      ordered.forEach(e => this.appendActivityEvent(e));
+    }
+
+    const commitsList = document.getElementById('commits-list');
+    if (!commitsList) return;
+
+    commitsList.innerHTML = '';
+    ordered
+      .filter(e => e.action !== 'joined' && e.action !== 'left')
+      .forEach(e => {
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML = `
+          <div class="activity-content">
+            <span class="activity-user">${e.user}</span>
+            ${e.action === 'created_file' ? ' created ' : ' edited '}
+            <span class="activity-target" style="color:var(--accent-color)">${e.target}</span>
+            <span class="activity-time">${this.formatTime(e.timestamp)}</span>
+          </div>
+        `;
+        commitsList.appendChild(item);
+      });
   }
 
   formatTime(isoString) {
@@ -1954,6 +2007,8 @@ class WorkspaceApp {
   // ── Interactive Codebase Graph Map Navigation ────────────────────
   
   initWorkspaceMap() {
+    this.renderWorkspaceMapNodes();
+
     const nodes = document.querySelectorAll('.map-node');
     nodes.forEach(node => {
       node.addEventListener('click', () => {
@@ -1973,6 +2028,36 @@ class WorkspaceApp {
     setInterval(() => this.drawMapConnections(), 2000);
   }
 
+  renderWorkspaceMapNodes() {
+    const graph = document.getElementById('workspace-map-graph');
+    if (!graph) return;
+
+    graph.querySelectorAll('.map-node').forEach(node => node.remove());
+
+    const nodes = [
+      { id: 'node-main-js', file: 'main.js', x: 50, y: 24, state: 'node-active' },
+      { id: 'node-api-js', file: 'api.js', x: 25, y: 52, state: 'node-changed' },
+      { id: 'node-config-js', file: 'config.js', x: 75, y: 52, state: 'node-stable' },
+      { id: 'node-database-js', file: 'database.js', x: 35, y: 78, state: 'node-stable' },
+      { id: 'node-auth-js', file: 'auth.js', x: 65, y: 78, state: 'node-stable' },
+      { id: 'node-utils-js', file: 'utils.js', x: 50, y: 92, state: 'node-stable' }
+    ];
+
+    nodes.forEach(nodeData => {
+      if (!this.files.includes(nodeData.file)) return;
+
+      const node = document.createElement('button');
+      node.type = 'button';
+      node.id = nodeData.id;
+      node.className = `map-node ${nodeData.state}`;
+      node.dataset.file = nodeData.file;
+      node.style.left = `${nodeData.x}%`;
+      node.style.top = `${nodeData.y}%`;
+      node.innerHTML = `<span class="node-file-icon">${this.getFileIcon(nodeData.file)}</span><span>${nodeData.file}</span>`;
+      graph.appendChild(node);
+    });
+  }
+
   drawMapConnections() {
     const svg = document.getElementById('map-connections-svg');
     const container = document.getElementById('workspace-map-graph');
@@ -1982,13 +2067,12 @@ class WorkspaceApp {
     svg.innerHTML = '';
     
     const connections = [
-      ['node-auth-js', 'node-server-js'],
-      ['node-login-js', 'node-server-js'],
-      ['node-middleware-js', 'node-server-js'],
-      ['node-database-js', 'node-server-js'],
-      ['node-user-model-js', 'node-database-js'],
-      ['node-utils-js', 'node-server-js'],
-      ['node-routes-js', 'node-server-js']
+      ['node-main-js', 'node-api-js'],
+      ['node-main-js', 'node-config-js'],
+      ['node-api-js', 'node-database-js'],
+      ['node-api-js', 'node-auth-js'],
+      ['node-api-js', 'node-utils-js'],
+      ['node-config-js', 'node-database-js']
     ];
     
     const containerRect = container.getBoundingClientRect();

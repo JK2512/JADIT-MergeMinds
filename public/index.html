@@ -450,6 +450,31 @@
           </div>
         </section>
 
+        <section class="grid-panel mission-brief-mini" id="panel-mission-brief">
+          <div class="panel-header">
+            <div class="panel-title"><h4>MISSION BRIEF</h4></div>
+            <span class="panel-header-badge" id="health-rating">Loading</span>
+          </div>
+          <div class="panel-body mission-brief-body">
+            <div class="mission-brief-row">
+              <span>Readiness</span>
+              <strong id="health-readiness">--</strong>
+            </div>
+            <div class="mission-brief-row">
+              <span>Pipeline</span>
+              <strong id="health-pipeline">--</strong>
+            </div>
+            <div class="mission-brief-row">
+              <span>MRs</span>
+              <strong id="health-mrs">--</strong>
+            </div>
+            <div class="mission-brief-row">
+              <span>Issues</span>
+              <strong id="health-issues">--</strong>
+            </div>
+          </div>
+        </section>
+
         <!-- AI Chat -->
         <section class="grid-panel ai-chat-panel" id="panel-ask-ai">
           <div class="panel-header">
@@ -471,12 +496,7 @@
 
         <!-- Hidden elements for app.js compatibility -->
         <div class="hidden-telemetry hidden">
-          <span id="health-rating"></span>
           <div id="health-progress-circle"></div>
-          <span id="health-readiness"></span>
-          <span id="health-pipeline"></span>
-          <span id="health-mrs"></span>
-          <span id="health-issues"></span>
           <span id="health-tests"></span>
           <span id="health-security"></span>
           <span id="mission-completion-est"></span>

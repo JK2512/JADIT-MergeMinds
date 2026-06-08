@@ -2,14 +2,14 @@
 // Editor Module — Monaco Editor & Yjs Binary Sync Client
 // ═══════════════════════════════════════════════════════════════
 
-import * as Y from 'https://esm.sh/yjs@13.6.31';
-
 export class CodeEditor {
   constructor(containerId, onContentChanged, onCursorChanged) {
     this.container = document.getElementById(containerId);
     this.onContentChanged = onContentChanged;
     this.onCursorChanged = onCursorChanged;
     this.editor = null;
+    this.textarea = null;
+    this.Y = null;
     this.doc = null;
     this.yText = null;
     this.yTextObserver = null;
@@ -21,10 +21,36 @@ export class CodeEditor {
 
   initialize() {
     return new Promise((resolve) => {
-      // Ensure Monaco loader is loaded, then initialize
+      let settled = false;
+      const finish = (editor) => {
+        if (settled) return;
+        settled = true;
+        resolve(editor);
+      };
+      const useFallback = () => {
+        this.initializeFallbackEditor();
+        finish(this.editor);
+      };
+
+      import('https://esm.sh/yjs@13.6.31')
+        .then((mod) => {
+          this.Y = mod;
+        })
+        .catch((err) => {
+          console.warn('Yjs CDN unavailable, using local editor fallback sync:', err);
+        });
+
+      const monacoTimeout = setTimeout(() => {
+        console.warn('Monaco loader timed out, using fallback editor.');
+        useFallback();
+      }, 3500);
+
+      // Ensure Monaco loader is loaded, then initialize.
       if (typeof require !== 'undefined') {
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
         require(['vs/editor/editor.main'], () => {
+          if (settled) return;
+          clearTimeout(monacoTimeout);
           this.editor = monaco.editor.create(this.container, {
             value: '// Connecting to collaboration session...',
             language: 'javascript',
@@ -70,17 +96,67 @@ export class CodeEditor {
             }
           });
 
-          resolve(this.editor);
+          finish(this.editor);
+        }, (err) => {
+          clearTimeout(monacoTimeout);
+          console.warn('Monaco CDN unavailable, using fallback editor:', err);
+          useFallback();
         });
       } else {
-        console.error('Monaco loader not found on page.');
-        resolve(null);
+        clearTimeout(monacoTimeout);
+        console.warn('Monaco loader not found on page, using fallback editor.');
+        useFallback();
       }
+    });
+  }
+
+  initializeFallbackEditor() {
+    this.container.innerHTML = '';
+    this.textarea = document.createElement('textarea');
+    this.textarea.className = 'fallback-code-editor';
+    this.textarea.spellcheck = false;
+    this.textarea.value = '// Local editor mode active.\n// External editor assets were unavailable, but your files are still visible.\n';
+    this.container.appendChild(this.textarea);
+
+    this.editor = {
+      setValue: (value) => { this.textarea.value = value || ''; },
+      getValue: () => this.textarea.value,
+      getModel: () => null,
+      updateOptions: () => {},
+      onDidChangeModelContent: () => {},
+      onDidChangeCursorPosition: () => {},
+      deltaDecorations: () => [],
+      getSelections: () => [],
+      setSelections: () => {}
+    };
+
+    this.textarea.addEventListener('input', () => {
+      if (this.isApplyingRemote || !this.onContentChanged) return;
+      this.onContentChanged(this.textarea.value);
+    });
+    this.textarea.addEventListener('keyup', () => this.emitFallbackCursor());
+    this.textarea.addEventListener('click', () => this.emitFallbackCursor());
+  }
+
+  emitFallbackCursor() {
+    if (!this.onCursorChanged || !this.textarea) return;
+    const beforeCursor = this.textarea.value.slice(0, this.textarea.selectionStart);
+    const lines = beforeCursor.split('\n');
+    this.onCursorChanged({
+      lineNumber: lines.length,
+      column: lines[lines.length - 1].length + 1
     });
   }
 
   // Bind to new Yjs document
   bindDocument(fileContent) {
+    if (!this.Y || this.textarea) {
+      this.isApplyingRemote = true;
+      this.editor?.setValue(fileContent || '');
+      this.isApplyingRemote = false;
+      return;
+    }
+
     if (this.yTextObserver && this.yText) {
       this.yText.unobserve(this.yTextObserver);
       this.yTextObserver = null;
@@ -89,7 +165,7 @@ export class CodeEditor {
       this.doc.destroy();
     }
 
-    this.doc = new Y.Doc();
+    this.doc = new this.Y.Doc();
     this.yText = this.doc.getText('code-content');
     
     // Bind Yjs update event to send updates to the WebSocket server
@@ -158,7 +234,7 @@ export class CodeEditor {
 
   // Update language based on file name/extension
   setLanguageForFile(fileName = 'main.js') {
-    if (!this.editor) return;
+    if (!this.editor || this.textarea) return;
     const model = this.editor.getModel();
     if (!model) return;
 
@@ -173,13 +249,21 @@ export class CodeEditor {
 
   // Apply Yjs update from server
   applyUpdate(binaryUpdate) {
-    if (!this.doc || !this.yText) return;
-    Y.applyUpdate(this.doc, new Uint8Array(binaryUpdate), 'remote');
+    if (this.textarea) {
+      if (typeof binaryUpdate === 'string') {
+        this.isApplyingRemote = true;
+        this.textarea.value = binaryUpdate;
+        this.isApplyingRemote = false;
+      }
+      return;
+    }
+    if (!this.Y || !this.doc || !this.yText) return;
+    this.Y.applyUpdate(this.doc, new Uint8Array(binaryUpdate), 'remote');
   }
 
   // Render remote cursors
   updateRemoteCursor(connectionId, user, position) {
-    if (!this.editor || !position) return;
+    if (!this.editor || !position || this.textarea) return;
 
     // Clear existing decoration for this user
     this.clearRemoteCursor(connectionId);
@@ -261,6 +345,12 @@ export class CodeEditor {
   setFontSize(size) {
     if (this.editor) {
       this.editor.updateOptions({ fontSize: size });
+    }
+  }
+
+  layout() {
+    if (this.editor && typeof this.editor.layout === 'function') {
+      this.editor.layout();
     }
   }
 }

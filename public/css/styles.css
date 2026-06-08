@@ -27,6 +27,11 @@
   
   --header-height: 52px;
   --status-height: 28px;
+
+  --bg-base: #07090e;
+  --text-primary: #f4f7fb;
+  --text-secondary: #a9b4c2;
+  --text-muted: #6f7a89;
 }
 
 /* ─── Theme Overrides ────────────────────────────────────────── */
@@ -137,6 +142,9 @@ body.theme-glassmorphism {
   --bg-base: #07090e;
   --glass-bg: rgba(13, 17, 23, var(--glass-alpha, 0.65));
   --glass-border: rgba(255, 255, 255, 0.06);
+  --text-primary: #f4f7fb;
+  --text-secondary: #a9b4c2;
+  --text-muted: #6f7a89;
 }
 
 /* ─── Reset & Base ──────────────────────────────────────────── */
@@ -269,6 +277,7 @@ body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  min-height: 0;
 }
 
 .sidebar-panel .panel-header {
@@ -288,6 +297,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0; /* Prevent flex-item from overflowing */
+  min-height: 0;
 }
 
 .editor-area {
@@ -348,7 +358,8 @@ body {
 
 /* Bottom Panels (Terminal/Activity) */
 .bottom-panels {
-  height: 200px; /* Default height */
+  height: 180px; /* Default height */
+  max-height: 350px;
   display: flex;
   flex-direction: column;
   background: var(--glass-bg);
@@ -375,6 +386,9 @@ body {
 
 .bottom-panels-content .grid-panel {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -395,6 +409,8 @@ body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .ai-sidebar .grid-panel {
@@ -403,6 +419,9 @@ body {
   border-bottom: 1px solid var(--glass-border);
   background: transparent;
   box-shadow: none;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Task 4: Reduced Map */
@@ -415,6 +434,30 @@ body {
 .ai-agents-mini {
   max-height: 220px;
   flex-shrink: 0;
+}
+
+.mission-brief-mini {
+  flex-shrink: 0;
+}
+
+.mission-brief-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  padding: 8px 10px;
+}
+
+.mission-brief-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.mission-brief-row strong {
+  color: var(--text-primary);
+  font-weight: 700;
 }
 
 .agent-list-compact {
@@ -451,13 +494,15 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 160px;
 }
 
 /* ─── File Explorer (Task 1) ───────────────────────────────── */
 .file-explorer {
   padding: 8px 0;
   overflow-y: auto;
+  height: 100%;
+  min-height: 0;
 }
 
 .tree-item {
@@ -529,6 +574,7 @@ body {
 
 /* ─── Workspace Codebase Node Map ──────────────────────────── */
 .map-body {
+  flex: 1;
   background: rgba(0,0,0,0.1);
   overflow: hidden !important;
 }
@@ -806,9 +852,28 @@ body {
 .editor-body {
   height: 100%;
 }
+.editor-container-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
 #editor-container {
   height: 100%;
   width: 100%;
+  min-height: 0;
+}
+.fallback-code-editor {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: 0;
+  outline: 0;
+  padding: 14px 18px;
+  background: #070a0f;
+  color: #e6edf3;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* ─── Upgraded Mission Brief ────────────────────────────────── */
@@ -1541,6 +1606,42 @@ body {
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.08); }
 .hidden { display: none !important; }
+
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-panel .panel-body,
+.activity-panel .panel-body,
+.ai-chat-panel .panel-body {
+  display: flex;
+  flex-direction: column;
+}
+
+#activity-list,
+#commits-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.chat-panel-body,
+.chat-container,
+.terminal-body,
+.terminal-container {
+  min-height: 0;
+}
+
+.chat-messages {
+  min-height: 0;
+}
+
+#panel-ask-ai {
+  flex: 1 0 180px;
+  min-height: 180px;
+}
 
 /* ─── Premium SaaS Design System — Linear / Raycast / Cursor Overhaul ───── */
 

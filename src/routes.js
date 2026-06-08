@@ -30,6 +30,23 @@ export function setupRoutes(app, projectMemory, collabServer) {
     }
   });
 
+  app.post('/api/project/update-file', (req, res) => {
+    const { fileName, content, userName } = req.body;
+    if (!fileName) {
+      return res.status(400).json({ error: 'File name is required' });
+    }
+    try {
+      projectMemory.updateFile(fileName, content || '', userName || 'local');
+      projectMemory.saveToDisk();
+      if (collabServer && typeof collabServer.broadcastFileReload === 'function') {
+        collabServer.broadcastFileReload(fileName, content || '');
+      }
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post('/api/project/rename-file', (req, res) => {
     const { oldName, newName, userName } = req.body;
     if (!oldName || !newName) {

@@ -22,25 +22,45 @@ export class AIPanel {
   }
 
   init() {
-    if (!this.messagesEl) return;
+    if (!this.messagesEl) {
+      console.warn('AI Panel init skipped: #chat-messages not found.');
+      return;
+    }
 
     // Bind event listeners
-    this.sendBtn.addEventListener('click', () => this.handleSendMessage());
-    this.inputEl.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        this.handleSendMessage();
-      }
-    });
+    if (this.sendBtn) {
+      this.sendBtn.addEventListener('click', () => this.handleSendMessage());
+    } else {
+      console.warn('AI Panel send button missing: #chat-send');
+    }
+
+    if (this.inputEl) {
+      this.inputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          this.handleSendMessage();
+        }
+      });
+    } else {
+      console.warn('AI Panel input missing: #chat-input');
+    }
 
     // Quick Actions Click Handlers
-    this.qaToday.addEventListener('click', () => this.triggerQuickAction("What happened today?"));
-    this.qaAway.addEventListener('click', () => this.triggerQuickAction("What changed while I was away?"));
-    this.qaReview.addEventListener('click', () => this.triggerQuickAction("Review the current code."));
-    this.qaNext.addEventListener('click', () => this.triggerQuickAction("What should I work on next?"));
+    this.bindOptionalAction(this.qaToday, 'qa-today', "What happened today?");
+    this.bindOptionalAction(this.qaAway, 'qa-away', "What changed while I was away?");
+    this.bindOptionalAction(this.qaReview, 'qa-review', "Review the current code.");
+    this.bindOptionalAction(this.qaNext, 'qa-next', "What should I work on next?");
 
     // Render initial welcome help message
     this.renderHelpMessage();
+  }
+
+  bindOptionalAction(el, id, queryText) {
+    if (!el) {
+      console.warn(`AI Panel quick action missing: #${id}`);
+      return;
+    }
+    el.addEventListener('click', () => this.triggerQuickAction(queryText));
   }
 
   renderHelpMessage() {
@@ -150,6 +170,11 @@ export class AIPanel {
   }
 
   async handleSendMessage(customText = null) {
+    if (!customText && !this.inputEl) {
+      console.warn('AI Panel cannot send message: #chat-input not found.');
+      return;
+    }
+
     const text = (customText || this.inputEl.value).trim();
     if (!text || this.isStreaming) return;
 
@@ -293,13 +318,21 @@ export class AIPanel {
 
   setInterfaceState(loading) {
     this.isStreaming = loading;
-    this.inputEl.disabled = loading;
-    this.sendBtn.disabled = loading;
+    if (this.inputEl) {
+      this.inputEl.disabled = loading;
+    }
+    if (this.sendBtn) {
+      this.sendBtn.disabled = loading;
+    }
     
     const btns = [this.qaToday, this.qaAway, this.qaReview, this.qaNext];
     btns.forEach(btn => {
       if (btn) btn.disabled = loading;
     });
+
+    if (!this.sendBtn || !this.inputEl) {
+      return;
+    }
 
     if (loading) {
       this.sendBtn.style.opacity = '0.5';
