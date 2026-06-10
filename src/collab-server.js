@@ -566,7 +566,7 @@ class CollabServer {
       ws.send(stateUpdate);
     }
 
-    console.log(` Connection ${connectionId.slice(0, 8)}  Room [${roomName}], File [${fileName}]`);
+    console.log(`[ROOM_JOIN] room=${roomName} file=${fileName} connection=${connectionId.slice(0, 8)}`);
 
     //  Message Handler 
 
@@ -616,6 +616,7 @@ class CollabServer {
     const userName = conn.user?.name || 'anonymous';
     const updateSize = message.byteLength || message.length || 0;
 
+    console.log(`[SERVER_UPDATE_RECEIVED] room=${room} file=${file} user=${userName} size=${updateSize}`);
     console.log(` UPDATE_FROM_CLIENT user=${userName} file=${file} room=${room} size=${updateSize}`);
 
     try {
@@ -638,7 +639,14 @@ class CollabServer {
         // Still allow the update to proceed  the modal is informational
       }
 
-      this.memory.updateFile(file, content, userName);
+      // updateFile may throw via assertCanEditFile for non-owners on locked
+      // files. Since Y.applyUpdate already modified the Yjs doc above, we must
+      // not let this throw skip the broadcast and break Yjs sync consistency.
+      try {
+        this.memory.updateFile(file, content, userName);
+      } catch (updateErr) {
+        console.warn(`[CollabServer] updateFile skipped for ${file}: ${updateErr.message}`);
+      }
 
       // Debounced activity logging (avoid spamming on every keystroke)
       const debounceKey = `${room}:${file}:${userName}`;
@@ -682,6 +690,8 @@ class CollabServer {
           if (!canonicalName || this.memory.isSystemActor(canonicalName)) {
             throw new Error(`Unauthorized or invalid username: "${rawName || 'Anonymous'}"`);
           }
+
+          console.log('[ROOM_JOIN]', { userName: canonicalName, file: conn.file, room: conn.room });
 
           const color = msg.user?.color || this.assignColor();
           conn.user = {
@@ -820,6 +830,7 @@ class CollabServer {
         if (!newFile || newFile === conn.file) break;
 
         conn.file = newFile;
+        console.log(`[ROOM_JOIN] room=${conn.room} file=${newFile} connection=${conn.id.slice(0, 8)} switchFile=true`);
 
         // Update presence tracking
         this.memory.userSwitchedFile(conn.id, newFile);
@@ -849,12 +860,38 @@ class CollabServer {
           type: 'remoteCursor',
           user: conn.user,
           connectionId: conn.id,
+          file: conn.file,
           cursor: msg.cursor
         }, ws);
         
         // Run conflict check and broadcast
         this.memory.runConflictCheck('file_edit');
         this.broadcastConflictIntelligence(conn.room);
+        break;
+      }
+
+      case 'contentSnapshot': {
+        const file = msg.file || conn.file;
+        if (!file || file !== conn.file) break;
+        const content = typeof msg.content === 'string' ? msg.content : '';
+        const userName = conn.user?.name || 'anonymous';
+        console.log(`[SERVER_UPDATE_RECEIVED] mode=snapshot room=${conn.room} file=${file} user=${userName} size=${content.length}`);
+
+        try {
+          this.memory.updateFile(file, content, userName);
+        } catch (updateErr) {
+          console.warn(`[CollabServer] snapshot updateFile skipped for ${file}: ${updateErr.message}`);
+        }
+
+        this.broadcastToFilePeers(conn.room, file, {
+          type: 'contentSnapshot',
+          file,
+          content,
+          user: conn.user,
+          connectionId: conn.id,
+          timestamp: msg.timestamp || Date.now()
+        }, ws);
+        console.log(`[SERVER_BROADCAST] mode=snapshot room=${conn.room} file=${file} user=${userName} size=${content.length}`);
         break;
       }
 
@@ -997,10 +1034,12 @@ class CollabServer {
       }
       client.send(binaryData);
       sentCount++;
+      console.log(`[SERVER_BROADCAST] room=${room} file=${file} to=${clientConn.user?.name || clientConn.id} size=${binaryData.byteLength || binaryData.length || 0}`);
       console.log(` BROADCAST_TO_CLIENT from=${senderName} to=${clientConn.user?.name || clientConn.id} file=${file} size=${binaryData.byteLength || binaryData.length || 0}`);
     }
 
     if (sentCount === 0) {
+      console.log(`[SERVER_BROADCAST] room=${room} file=${file} sent=0 roomSize=${roomSet.size}`);
       console.log(` BROADCAST_EMPTY from=${senderName} file=${file} roomSize=${roomSet.size} (no matching peers)`);
     }
   }

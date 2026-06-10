@@ -2,7 +2,7 @@
 // Main Client Orchestrator  Manages WS, UI Events, and Modules
 // 
 
-import { CodeEditor } from './editor.js';
+import { CodeEditor } from './editor.js?v=sync-cursor-1';
 import { PresenceTracker } from './presence.js';
 import { NotificationSystem } from './notifications.js';
 import { AIPanel } from './ai-panel.js';
@@ -672,6 +672,7 @@ class WorkspaceApp {
       console.log("WS_CONNECT_SUCCESS");
       
       // Join room with user metadata
+      console.log(`[ROOM_JOIN] room=hackathon-demo file=${this.currentFile}`);
       this.sendJSON({
         type: 'join',
         user: this.presence.currentUser
@@ -682,6 +683,7 @@ class WorkspaceApp {
       if (event.data instanceof ArrayBuffer) {
         // Yjs binary update
         const updateSize = event.data.byteLength;
+        console.log('[DOC_UPDATE_RECEIVED]');
         console.log(` UPDATE_RECEIVED file=${this.currentFile} size=${updateSize}`);
         this.editor.applyUpdate(event.data);
         this.fileContents[this.currentFile] = this.getCurrentEditorContent();
@@ -765,6 +767,7 @@ class WorkspaceApp {
         );
         for (const connId of this.editor.remoteDecorations.keys()) {
           if (!activePeersOnSameFile.has(connId)) {
+            if (this.editor.shouldKeepRecentRemoteCursor?.(connId)) continue;
             this.editor.clearRemoteCursor(connId);
           }
         }
@@ -790,11 +793,36 @@ class WorkspaceApp {
         break;
 
       case 'remoteCursor':
-        if (msg.connectionId !== this.connectionId) {
+        if (msg.connectionId !== this.connectionId && (!msg.file || msg.file === this.currentFile)) {
+          console.log('[REMOTE_CURSOR_RECEIVED]', {
+            from: msg.connectionId,
+            user: msg.user?.name || msg.user,
+            file: msg.file,
+            currentFile: this.currentFile
+          });
           this.editor.updateRemoteCursor(msg.connectionId, msg.user, msg.cursor);
           this.updateLiveFileActivity(msg.file || this.currentFile, msg.user?.name || msg.user, 'editing', msg.user?.color);
           this.renderFileExplorer();
           this.refreshWorkspaceMap();
+        }
+        break;
+
+      case 'contentSnapshot':
+        if (msg.file === this.currentFile && (!msg.connectionId || msg.connectionId !== this.connectionId)) {
+          console.log('[DOC_UPDATE_RECEIVED]', { mode: 'snapshot', file: msg.file, user: msg.user?.name || msg.user });
+          this.editor.replaceContentFromRemote(msg.content || '');
+          this.fileContents[msg.file] = msg.content || '';
+          this.lastCleanContent[msg.file] = msg.content || '';
+          this.updateLiveFileActivity(msg.file, msg.user?.name || msg.user, 'editing', msg.user?.color);
+          this.renderFileExplorer();
+          this.refreshWorkspaceMap();
+        } else {
+          console.log('[DOC_SNAPSHOT_SKIPPED]', {
+            file: msg.file,
+            currentFile: this.currentFile,
+            from: msg.connectionId,
+            self: this.connectionId
+          });
         }
         break;
 
@@ -1055,6 +1083,8 @@ class WorkspaceApp {
       this.fileContents[this.currentFile] = update;
       this.lastCleanContent[this.currentFile] = update;
       this.dirtyFiles.add(this.currentFile);
+      this.sendContentSnapshot(update);
+      this.sendCurrentCursor();
       this.updateLiveFileActivity(this.currentFile, userName || 'local', 'editing', this.presence?.currentUser?.color);
       this.renderFileTabs();
       this.renderFileExplorer();
@@ -1079,11 +1109,14 @@ class WorkspaceApp {
       return;
     }
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      console.log('[DOC_UPDATE_SENT]');
       console.log(` UPDATE_SENT file=${this.currentFile} size=${update.byteLength || update.length || 0}`);
       this.updateLiveFileActivity(this.currentFile, userName || 'local', 'editing', this.presence?.currentUser?.color);
       this.renderFileExplorer();
       this.refreshWorkspaceMap();
       this.ws.send(update);
+      this.sendContentSnapshot(this.getCurrentEditorContent());
+      this.sendCurrentCursor();
       setTimeout(() => {
         const content = this.getCurrentEditorContent();
         this.fileContents[this.currentFile] = content;
@@ -1093,6 +1126,24 @@ class WorkspaceApp {
     } else {
       console.warn(` UPDATE_NOT_SENT file=${this.currentFile} wsState=${this.ws?.readyState}`);
     }
+  }
+
+  sendContentSnapshot(content) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    clearTimeout(this.contentSnapshotTimer);
+    const file = this.currentFile;
+    const user = this.presence?.currentUser || null;
+    this.contentSnapshotTimer = setTimeout(() => {
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN || file !== this.currentFile) return;
+      console.log('[DOC_SNAPSHOT_SENT]', { file, size: (content || '').length });
+      this.sendJSON({
+        type: 'contentSnapshot',
+        file,
+        content: content || '',
+        user,
+        timestamp: Date.now()
+      });
+    }, 80);
   }
 
   updateLiveFileActivity(fileName, user, action = 'editing', color) {
@@ -1111,12 +1162,19 @@ class WorkspaceApp {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.sendJSON({
         type: 'cursor',
+        file: this.currentFile,
         cursor: {
           lineNumber: position.lineNumber,
           column: position.column
         }
       });
+      console.log('[LOCAL_CURSOR_SENT]', { file: this.currentFile, position });
     }
+  }
+
+  sendCurrentCursor() {
+    const position = this.editor?.getCursorPosition?.();
+    if (position) this.handleLocalCursorChange(position);
   }
 
   //  UI Rendering 

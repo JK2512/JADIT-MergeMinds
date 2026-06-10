@@ -13,10 +13,12 @@ export class CodeEditor {
     this.doc = null;
     this.yText = null;
     this.yTextObserver = null;
+    this.pendingBindContent = null;
     this.isApplyingRemote = false;
     
     // Track remote cursors: connectionId -> decorationId
     this.remoteDecorations = new Map();
+    this.remoteCursorSeenAt = new Map();
   }
 
   initialize() {
@@ -32,9 +34,16 @@ export class CodeEditor {
         finish(this.editor);
       };
 
-      import('https://esm.sh/yjs@13.6.31')
+      const yjsPromise = import('https://esm.sh/yjs@13.6.31')
         .then((mod) => {
           this.Y = mod;
+          console.log('[YJS_INIT]');
+          if (this.pendingBindContent !== null && this.editor && !this.textarea) {
+            const content = this.pendingBindContent;
+            this.pendingBindContent = null;
+            console.log('[MODEL_BOUND] pending_yjs_ready');
+            this.bindDocument(content);
+          }
         })
         .catch((err) => {
           console.warn('Yjs CDN unavailable, using local editor fallback sync:', err);
@@ -74,11 +83,20 @@ export class CodeEditor {
               horizontalScrollbarSize: 8
             }
           });
+          console.log('[MODEL_CREATED]');
 
           // Bind local edit listener
           this.editor.onDidChangeModelContent((event) => {
-            if (this.isApplyingRemote || !this.doc || !this.yText) return;
+            if (this.isApplyingRemote) return;
+            if (!this.doc || !this.yText) {
+              console.warn('[LOCAL_EDIT_NO_DOC]', { hasDoc: !!this.doc, hasYText: !!this.yText });
+              if (this.onContentChanged && this.editor && typeof this.editor.getValue === 'function') {
+                this.onContentChanged(this.editor.getValue());
+              }
+              return;
+            }
             
+            console.log('[LOCAL_EDIT]', event);
             this.doc.transact(() => {
               // Apply changes using precise character offsets
               const sortedChanges = [...event.changes].sort((a, b) => b.rangeOffset - a.rangeOffset);
@@ -87,6 +105,7 @@ export class CodeEditor {
                 this.yText.insert(change.rangeOffset, change.text);
               }
             }, 'local');
+            console.log('[YTEXT_UPDATED]', { origin: 'local', length: this.yText.length });
           });
 
           // Bind cursor change listener
@@ -96,7 +115,10 @@ export class CodeEditor {
             }
           });
 
-          finish(this.editor);
+          // Make sure Yjs is loaded (or catch block finished) before finishing
+          yjsPromise.finally(() => {
+            finish(this.editor);
+          });
         }, (err) => {
           clearTimeout(monacoTimeout);
           console.warn('Monaco CDN unavailable, using fallback editor:', err);
@@ -150,27 +172,42 @@ export class CodeEditor {
 
   // Bind to new Yjs document
   bindDocument(fileContent) {
-    if (!this.Y || this.textarea) {
+    console.log('[bindDocument] executing');
+    if (!this.Y && !this.textarea) {
+      this.pendingBindContent = fileContent || '';
+      console.warn('[MODEL_BOUND] waiting_for_yjs');
       this.isApplyingRemote = true;
       this.editor?.setValue(fileContent || '');
       this.isApplyingRemote = false;
       return;
     }
+    if (this.textarea) {
+      this.isApplyingRemote = true;
+      this.editor?.setValue(fileContent || '');
+      this.isApplyingRemote = false;
+      console.log('[MODEL_BOUND] fallback_textarea');
+      return;
+    }
 
     if (this.yTextObserver && this.yText) {
       this.yText.unobserve(this.yTextObserver);
+      console.log('[YTEXT_OBSERVER_REMOVED]');
       this.yTextObserver = null;
     }
     if (this.doc) {
+      console.log('[MODEL_DISPOSED]');
       this.doc.destroy();
     }
 
     this.doc = new this.Y.Doc();
+    console.log('[YDOC_CREATED]');
     this.yText = this.doc.getText('code-content');
+    console.log('[YTEXT_CREATED]');
     
     // Bind Yjs update event to send updates to the WebSocket server
     this.doc.on('update', (update, origin) => {
       if (origin !== 'remote' && origin !== 'init' && this.onContentChanged) {
+        console.log('[DOC_UPDATE_SENT]');
         this.onContentChanged(update);
       }
     });
@@ -182,6 +219,7 @@ export class CodeEditor {
       }
     }, 'init');
     this.editor.setValue(this.yText.toString());
+    console.log('[MODEL_BOUND]', { length: this.yText.length });
     this.isApplyingRemote = false;
 
     // Observe changes to apply them to Monaco
@@ -190,6 +228,7 @@ export class CodeEditor {
       if (event.transaction.origin === 'local') return;
 
       this.isApplyingRemote = true;
+      console.log('[YTEXT_UPDATED]', { origin: event.transaction.origin || 'remote', delta: event.delta.length });
       let index = 0;
       const edits = [];
 
@@ -230,6 +269,8 @@ export class CodeEditor {
     };
 
     this.yText.observe(this.yTextObserver);
+    console.log('[YTEXT_OBSERVER_ADDED]');
+    console.log('[YJS_BOUND]');
     
     this.clearAllRemoteCursors();
   }
@@ -260,12 +301,57 @@ export class CodeEditor {
       return;
     }
     if (!this.Y || !this.doc || !this.yText) return;
+    console.log('[REMOTE_APPLY]');
     this.Y.applyUpdate(this.doc, new Uint8Array(binaryUpdate), 'remote');
+  }
+
+  replaceContentFromRemote(content) {
+    const nextContent = content || '';
+    const currentValue = this.getValue();
+    if (currentValue === nextContent) {
+      console.log('[REMOTE_APPLY]', { mode: 'snapshot_noop', length: nextContent.length });
+      return;
+    }
+    if (this.textarea) {
+      this.isApplyingRemote = true;
+      this.textarea.value = nextContent;
+      this.isApplyingRemote = false;
+      console.log('[REMOTE_APPLY]', { mode: 'snapshot_textarea', length: nextContent.length });
+      return;
+    }
+
+    if (!this.editor) return;
+
+    this.isApplyingRemote = true;
+    if (this.yTextObserver && this.yText) {
+      this.yText.unobserve(this.yTextObserver);
+      console.log('[YTEXT_OBSERVER_REMOVED]', { reason: 'snapshot_replace' });
+    }
+    const model = this.editor.getModel?.();
+    if (this.doc && this.yText) {
+      this.doc.transact(() => {
+        this.yText.delete(0, this.yText.length);
+        if (nextContent) this.yText.insert(0, nextContent);
+      }, 'remote');
+    }
+    if (model && typeof model.setValue === 'function') {
+      model.setValue(nextContent);
+    } else {
+      this.editor.setValue(nextContent);
+    }
+    if (this.yTextObserver && this.yText) {
+      this.yText.observe(this.yTextObserver);
+      console.log('[YTEXT_OBSERVER_ADDED]', { reason: 'snapshot_replace' });
+    }
+    this.isApplyingRemote = false;
+    console.log('[REMOTE_APPLY]', { mode: 'snapshot', length: nextContent.length });
   }
 
   // Render remote cursors
   updateRemoteCursor(connectionId, user, position) {
     if (!this.editor || !position || this.textarea) return;
+    console.log('[REMOTE_CURSOR_APPLY]', { connectionId, user: user?.name, position });
+    this.remoteCursorSeenAt.set(connectionId, Date.now());
 
     // Clear existing decoration for this user
     this.clearRemoteCursor(connectionId);
@@ -338,6 +424,11 @@ export class CodeEditor {
     if (styleEl) styleEl.remove();
   }
 
+  shouldKeepRecentRemoteCursor(connectionId, maxAgeMs = 10000) {
+    const seenAt = this.remoteCursorSeenAt.get(connectionId);
+    return !!seenAt && (Date.now() - seenAt) < maxAgeMs;
+  }
+
   clearAllRemoteCursors() {
     for (const connectionId of this.remoteDecorations.keys()) {
       this.clearRemoteCursor(connectionId);
@@ -358,6 +449,21 @@ export class CodeEditor {
       return this.editor.getValue();
     }
     return '';
+  }
+
+  getCursorPosition() {
+    if (this.textarea) {
+      const beforeCursor = this.textarea.value.slice(0, this.textarea.selectionStart);
+      const lines = beforeCursor.split('\n');
+      return {
+        lineNumber: lines.length,
+        column: lines[lines.length - 1].length + 1
+      };
+    }
+    if (this.editor && typeof this.editor.getPosition === 'function') {
+      return this.editor.getPosition();
+    }
+    return null;
   }
 
   layout() {
