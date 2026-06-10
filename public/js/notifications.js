@@ -1,6 +1,6 @@
-// ═══════════════════════════════════════════════════════════════
-// Notifications Module — Real-time floating alerts / toast system
-// ═══════════════════════════════════════════════════════════════
+// 
+// Notifications Module  Real-time floating alerts / toast system
+// 
 
 export class NotificationSystem {
   constructor() {
@@ -85,18 +85,22 @@ export class NotificationSystem {
     icon.style.fontSize = '16px';
     icon.style.lineHeight = '1';
     
-    if (type === 'success') icon.textContent = '✅';
-    else if (type === 'warning') icon.textContent = '⚠️';
-    else if (type === 'danger') icon.textContent = '🚨';
-    else icon.textContent = 'ℹ️';
+    if (type === 'success') icon.textContent = '';
+    else if (type === 'warning') icon.textContent = '';
+    else if (type === 'danger') icon.textContent = '';
+    else icon.textContent = '';
 
     const text = document.createElement('div');
     text.style.flex = '1';
-    text.textContent = message;
+    if (typeof message === 'string' && message.trim().startsWith('<')) {
+      text.innerHTML = message;
+    } else {
+      text.textContent = message;
+    }
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'toast-close-btn';
-    closeBtn.textContent = '×';
+    closeBtn.textContent = '';
     closeBtn.onclick = () => this.dismiss(toast);
 
     toast.appendChild(icon);
@@ -107,6 +111,7 @@ export class NotificationSystem {
     if (duration > 0) {
       setTimeout(() => this.dismiss(toast), duration);
     }
+    return toast;
   }
 
   dismiss(toast) {

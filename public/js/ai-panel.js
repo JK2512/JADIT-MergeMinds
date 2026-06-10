@@ -1,7 +1,7 @@
-// ═══════════════════════════════════════════════════════════════
-// AI Panel Module — Client Chat Interface & SSE Streaming
+// 
+// AI Panel Module  Client Chat Interface & SSE Streaming
 // Connects UI, runs chat history, handles markdown & Quick Actions.
-// ═══════════════════════════════════════════════════════════════
+// 
 
 export class AIPanel {
   constructor(appInstance) {
@@ -13,6 +13,9 @@ export class AIPanel {
     this.messagesEl = document.getElementById('chat-messages');
     this.inputEl = document.getElementById('chat-input');
     this.sendBtn = document.getElementById('chat-send');
+    this.clearBtn = document.getElementById('chat-clear-btn');
+    this.agentSelector = document.getElementById('chat-agent-selector');
+    this.suggestedPrompts = document.getElementById('suggested-prompts');
     
     // Quick Action Buttons
     this.qaToday = document.getElementById('qa-today');
@@ -35,7 +38,7 @@ export class AIPanel {
     }
 
     if (this.inputEl) {
-      this.inputEl.addEventListener('keypress', (e) => {
+      this.inputEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           this.handleSendMessage();
@@ -43,6 +46,38 @@ export class AIPanel {
       });
     } else {
       console.warn('AI Panel input missing: #chat-input');
+    }
+
+    if (this.clearBtn) {
+      this.clearBtn.addEventListener('click', () => {
+        this.history = [];
+        this.renderHelpMessage();
+      });
+    }
+
+    if (this.agentSelector) {
+      this.agentSelector.value = this.app.activeAgentId || 'manager';
+      this.agentSelector.addEventListener('change', () => {
+        this.app.activeAgentId = this.agentSelector.value;
+        this.app.applyPersonality?.(this.agentSelector.value);
+        this.app.renderAgents?.();
+      });
+    }
+
+    if (this.suggestedPrompts) {
+      this.suggestedPrompts.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-prompt]');
+        if (!btn || !this.inputEl) return;
+        const agent = btn.dataset.agent;
+        if (agent) {
+          this.app.activeAgentId = agent;
+          if (this.agentSelector) this.agentSelector.value = agent;
+          this.app.applyPersonality?.(agent);
+          this.app.renderAgents?.();
+        }
+        this.inputEl.value = btn.dataset.prompt || '';
+        this.inputEl.focus();
+      });
     }
 
     // Quick Actions Click Handlers
@@ -66,7 +101,7 @@ export class AIPanel {
   renderHelpMessage() {
     this.messagesEl.innerHTML = `
       <div class="chat-bubble chat-bubble-ai welcome-summary-card">
-        <h3>🤖 Tech Lead Manager Ready</h3>
+        <h3> Tech Lead Manager Ready</h3>
         <p>Hello team, I am your Tech Lead & Engineering Manager. Ask me technical questions, check status, or run verification.</p>
         <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Context Compiled: all workspace files, active presence, and real-time logs.</p>
       </div>
@@ -78,37 +113,37 @@ export class AIPanel {
     const agentDetails = {
       manager: {
         name: "Tech Lead Manager",
-        title: "🤖 Tech Lead Manager Ready",
+        title: " Tech Lead Manager Ready",
         desc: "Hello team, I am your Tech Lead & Engineering Manager. Ask me technical questions, check status, or run verification."
       },
       reviewer: {
         name: "Senior Code Reviewer",
-        title: "🔍 Senior Code Reviewer Online",
+        title: " Senior Code Reviewer Online",
         desc: "Ready to inspect code quality, look for security bugs, performance bottlenecks, and style formatting. Let's analyze the codebase."
       },
       devops: {
         name: "DevOps Specialist",
-        title: "🚀 DevOps Specialist Active",
+        title: " DevOps Specialist Active",
         desc: "Focused on CI/CD pipelines, shell/terminal tasks, environment setup, dependencies, compiling, and automation. Ready to help with compilation and runs."
       },
       planner: {
         name: "Project Planner",
-        title: "📅 Project Planner Ready",
+        title: " Project Planner Ready",
         desc: "Ready to coordinate team activities, track GitLab issues, merge requests, task decomposition, and milestone mapping."
       },
       security: {
         name: "Security Analyst",
-        title: "🛡️ Security Analyst Active",
+        title: " Security Analyst Active",
         desc: "Specialized in static code analysis, vulnerability scanning, OWASP standards, secrets audits, and securing configurations."
       },
       cto: {
         name: "Startup CTO",
-        title: "💡 Startup CTO Online",
+        title: " Startup CTO Online",
         desc: "Focused on agile engineering velocity, MVP scoping trade-offs, architecture simplification, scalability, and technical debt mapping."
       },
       pm: {
         name: "Product Manager",
-        title: "📅 Product Manager Ready",
+        title: " Product Manager Ready",
         desc: "Focused on requirements definition, user stories mapping, feature scoping, feedback analysis, and roadmap scheduling."
       }
     };
@@ -119,6 +154,9 @@ export class AIPanel {
     // Update input placeholder
     if (this.inputEl) {
       this.inputEl.placeholder = `Ask ${details.name}...`;
+    }
+    if (this.agentSelector && this.agentSelector.value !== agentId) {
+      this.agentSelector.value = agentId;
     }
 
     // Update greeting message card
@@ -153,7 +191,7 @@ export class AIPanel {
     }
 
     let timeLeft = seconds;
-    banner.innerHTML = `⚠️ <strong>AI is temporarily rate limited.</strong> Retrying in <span id="rate-limit-countdown" style="font-weight: bold; color: var(--warning, #feca57);">${timeLeft}</span> seconds...`;
+    banner.innerHTML = ` <strong>AI is temporarily rate limited.</strong> Retrying in <span id="rate-limit-countdown" style="font-weight: bold; color: var(--warning, #feca57);">${timeLeft}</span> seconds...`;
     this.scrollToBottom();
 
     const interval = setInterval(() => {
@@ -205,7 +243,9 @@ export class AIPanel {
           message: text,
           history: this.history.slice(0, -1), // Send history excluding the last message we just pushed
           username: this.app.presence.currentUser?.name,
-          agentId: this.app.activeAgentId || 'manager'
+          agentId: this.app.activeAgentId || 'manager',
+          currentFile: this.app.currentFile,
+          currentFileContent: this.app.getCurrentEditorContent?.() || ''
         })
       });
 
@@ -237,14 +277,14 @@ export class AIPanel {
 
     } catch (err) {
       this.hideTypingIndicator();
-      this.appendMessage('ai', `⚠️ **Engineering Manager Error**: I ran into an issue analyzing the workspace: ${err.message}. Please verify your Gemini API key.`);
+      this.appendMessage('ai', ` **Engineering Manager Error**: I ran into an issue analyzing the workspace: ${err.message}. Please verify your Gemini API key.`);
       console.error("AI Panel stream error:", err);
     } finally {
       this.setInterfaceState(false);
     }
   }
 
-  // ── Streaming SSE Parser ──────────────────────────────────
+  //  Streaming SSE Parser 
 
   async readSSEStream(response, onChunk) {
     const reader = response.body.getReader();
@@ -283,7 +323,7 @@ export class AIPanel {
     }
   }
 
-  // ── UI Rendering Helpers ──────────────────────────────────
+  //  UI Rendering Helpers 
 
   appendMessage(role, text) {
     const bubble = this.createMessageBubble(role);

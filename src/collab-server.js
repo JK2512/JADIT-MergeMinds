@@ -1,8 +1,8 @@
-// ═══════════════════════════════════════════════════════════════
-// Collaboration Server — Real-time editing with Yjs + Presence
+// 
+// Collaboration Server  Real-time editing with Yjs + Presence
 // Handles WebSocket connections, Yjs document sync, user presence,
 // cursor sharing, and activity event broadcasting.
-// ═══════════════════════════════════════════════════════════════
+// 
 
 import { WebSocketServer } from 'ws';
 import * as Y from 'yjs';
@@ -18,10 +18,10 @@ const USER_COLORS = [
   '#5f27cd', '#01a3a4', '#f368e0', '#ff6348', '#7bed9f'
 ];
 
-// Demo project seed files — realistic content for a compelling demo
+// Demo project seed files  realistic content for a compelling demo
 const SEED_FILES = {
   'main.js': `// Main Application Entry Point
-// GitLab Co-Pilot Live — Hackathon Demo Project
+// GitLab Co-Pilot Live  Hackathon Demo Project
 
 import config from './config.js';
 import { setupRoutes } from './api.js';
@@ -231,9 +231,9 @@ class CollabServer {
   constructor(httpServer, projectMemory) {
     this.wss = new WebSocketServer({ noServer: true });
     this.memory = projectMemory;
-    this.activeDocuments = new Map();  // "room:file" → Y.Doc
-    this.connections = new Map();      // ws → { id, room, file, user }
-    this.rooms = new Map();            // room → Set<ws>
+    this.activeDocuments = new Map();  // "room:file"  Y.Doc
+    this.connections = new Map();      // ws  { id, room, file, user }
+    this.rooms = new Map();            // room  Set<ws>
     this.nextColorIndex = 0;
     this.editDebounceTimers = new Map();
 
@@ -243,7 +243,10 @@ class CollabServer {
     // Start watching files for external disk changes
     this.setupFileWatcher();
 
-    // Handle HTTP → WebSocket upgrade
+    // Register ProjectMemory event callbacks for real-time broadcasting
+    this.setupMemoryCallbacks();
+
+    // Handle HTTP  WebSocket upgrade
     httpServer.on('upgrade', (request, socket, head) => {
       this.wss.handleUpgrade(request, socket, head, (ws) => {
         this.wss.emit('connection', ws, request);
@@ -255,20 +258,127 @@ class CollabServer {
       this.handleConnection(ws, request);
     });
 
-    console.log('📡 Collaboration server initialized');
+    // Start periodic check for lock inactivity
+    this.lockCheckInterval = setInterval(() => {
+      this.checkLockExpirations();
+    }, 15000); // Check every 15 seconds
+
+    console.log(' Collaboration server initialized');
   }
 
-  // ── Initialization ───────────────────────────────────────
+  checkLockExpirations() {
+    const now = Date.now();
+    const locks = this.memory.fileLocks;
+    for (const [file, lock] of locks.entries()) {
+      const lastAct = lock.lastActivityAt ? new Date(lock.lastActivityAt).getTime() : new Date(lock.lockedAt).getTime();
+      const elapsedMs = now - lastAct;
+      
+      // 15 min lock expiration: 900000 ms
+      if (elapsedMs >= 15 * 60 * 1000) {
+        console.log(`[FileLockExpired] Lock expired for ${file} owned by ${lock.owner}`);
+        this.memory.logActivity('system', 'FileLockExpired', file, { owner: lock.owner, reason: 'Inactive for 15 minutes' });
+        this.memory.unlockFile(file, 'System');
+        
+        for (const roomName of this.rooms.keys()) {
+          this.broadcastToRoom(roomName, {
+            type: 'managerAlert',
+            alertType: 'lock_expired',
+            data: { file, owner: lock.owner }
+          });
+        }
+      } 
+      // 10 min warning: 600000 ms
+      else if (elapsedMs >= 10 * 60 * 1000 && !lock.warned) {
+        lock.warned = true;
+        this.memory.logActivity('system', 'LockWarning', file, { owner: lock.owner, reason: 'Inactive for 10 minutes' });
+        
+        for (const roomName of this.rooms.keys()) {
+          this.broadcastToRoom(roomName, {
+            type: 'managerAlert',
+            alertType: 'lock_warning',
+            data: {
+              file,
+              owner: lock.owner,
+              message: `Lock on ${file} by ${lock.owner} will expire in 5 minutes due to inactivity.`
+            }
+          }, null);
+        }
+      }
+    }
+  }
+
+  //  Memory Event Callbacks 
+
+  setupMemoryCallbacks() {
+    this.memory.onConflictDetected = (risk) => {
+      for (const roomName of this.rooms.keys()) {
+        this.broadcastToRoom(roomName, {
+          type: 'managerAlert',
+          alertType: 'conflict_risk',
+          data: risk
+        }, null);
+        this.broadcastConflictIntelligence(roomName);
+      }
+    };
+
+    this.memory.onOwnershipChanged = (fileName, ownerData) => {
+      for (const roomName of this.rooms.keys()) {
+        const type = ownerData.previousOwner ? 'ownershipTransferred' : 'ownershipAssigned';
+        this.broadcastToRoom(roomName, {
+          type,
+          file: fileName,
+          owner: ownerData.owner,
+          previousOwner: ownerData.previousOwner,
+          ownership: this.memory.getFileOwnership()
+        }, null);
+        this.broadcastToRoom(roomName, {
+          type: 'ownershipUpdate',
+          ownership: this.memory.getFileOwnership()
+        }, null);
+      }
+    };
+
+    this.memory.onLockChanged = (fileName, lockData, action) => {
+      for (const roomName of this.rooms.keys()) {
+        const type = action === 'locked' ? 'fileLocked' : 'fileUnlocked';
+        this.broadcastToRoom(roomName, {
+          type,
+          file: fileName,
+          owner: lockData.owner,
+          status: lockData.status,
+          locks: this.memory.getLockedFiles(),
+          event: { fileName, ...lockData, action }
+        }, null);
+        this.broadcastToRoom(roomName, {
+          type: 'lockUpdate',
+          locks: this.memory.getLockedFiles(),
+          event: { fileName, ...lockData, action }
+        }, null);
+        this.broadcastConflictIntelligence(roomName);
+      }
+    };
+  }
+
+  broadcastConflictIntelligence(room) {
+    this.broadcastToRoom(room, {
+      type: 'conflictUpdate',
+      risks: this.memory.getConflictRisks(),
+      ownership: this.memory.getFileOwnership(),
+      locks: this.memory.getLockedFiles()
+    }, null);
+  }
+
+  //  Initialization 
 
   seedFiles() {
     if (this.memory.getFileNames().length > 0) {
-      console.log("📂 Storage already has files. Skipping seed.");
+      console.log(" Storage already has files. Skipping seed.");
       return;
     }
     for (const [fileName, content] of Object.entries(SEED_FILES)) {
       this.memory.updateFile(fileName, content, 'system');
     }
-    console.log(`📂 Seeded ${Object.keys(SEED_FILES).length} demo files`);
+    console.log(` Seeded ${Object.keys(SEED_FILES).length} demo files`);
   }
 
   createFile(fileName, content = '', userName = 'system') {
@@ -409,7 +519,7 @@ class CollabServer {
     return color;
   }
 
-  // ── Connection Handling ──────────────────────────────────
+  //  Connection Handling 
 
   handleConnection(ws, request) {
     const url = new URL(request.url, `http://${request.headers.host}`);
@@ -456,9 +566,9 @@ class CollabServer {
       ws.send(stateUpdate);
     }
 
-    console.log(`📡 Connection ${connectionId.slice(0, 8)} → Room [${roomName}], File [${fileName}]`);
+    console.log(` Connection ${connectionId.slice(0, 8)}  Room [${roomName}], File [${fileName}]`);
 
-    // ── Message Handler ──────────────────────────────────
+    //  Message Handler 
 
     ws.on('message', (message, isBinary) => {
       if (isBinary || message instanceof Buffer) {
@@ -485,7 +595,7 @@ class CollabServer {
       }
     });
 
-    // ── Disconnect Handler ───────────────────────────────
+    //  Disconnect Handler 
 
     ws.on('close', () => this.handleDisconnect(ws));
     ws.on('error', (err) => {
@@ -494,7 +604,7 @@ class CollabServer {
     });
   }
 
-  // ── Yjs Synchronization ──────────────────────────────────
+  //  Yjs Synchronization 
 
   handleYjsUpdate(ws, message) {
     const conn = this.connections.get(ws);
@@ -506,13 +616,28 @@ class CollabServer {
     const userName = conn.user?.name || 'anonymous';
     const updateSize = message.byteLength || message.length || 0;
 
-    console.log(`📨 UPDATE_FROM_CLIENT user=${userName} file=${file} room=${room} size=${updateSize}`);
+    console.log(` UPDATE_FROM_CLIENT user=${userName} file=${file} room=${room} size=${updateSize}`);
 
     try {
       Y.applyUpdate(doc, new Uint8Array(message));
 
       // Update project memory with latest content
       const content = doc.getText('code-content').toString();
+
+      // Check lock enforcement before allowing edit
+      const lockCheck = this.memory.canEditFile(userName, file);
+      if (!lockCheck.allowed && userName !== 'anonymous') {
+        const lock = this.memory.fileLocks.get(file);
+        this.sendJSON(ws, {
+          type: 'lockEnforcement',
+          file,
+          owner: lock?.owner || 'Unknown',
+          reason: lockCheck.reason,
+          options: ['request_ownership', 'create_branch', 'read_only']
+        });
+        // Still allow the update to proceed  the modal is informational
+      }
+
       this.memory.updateFile(file, content, userName);
 
       // Debounced activity logging (avoid spamming on every keystroke)
@@ -534,10 +659,16 @@ class CollabServer {
       this.broadcastBinaryToFilePeers(ws, room, file, message);
     } catch (err) {
       console.error('Yjs sync error:', err.message);
+      this.sendJSON(ws, {
+        type: 'managerDecision',
+        status: 'blocked',
+        file,
+        message: err.message
+      });
     }
   }
 
-  // ── Control Messages ─────────────────────────────────────
+  //  Control Messages 
 
   handleControlMessage(ws, msg) {
     const conn = this.connections.get(ws);
@@ -545,40 +676,142 @@ class CollabServer {
 
     switch (msg.type) {
       case 'join': {
-        const color = msg.user?.color || this.assignColor();
-        conn.user = {
-          name: msg.user?.name || 'Anonymous',
-          color
-        };
+        try {
+          const rawName = msg.user?.name;
+          const canonicalName = this.memory.getCanonicalUsername(rawName);
+          if (!canonicalName || this.memory.isSystemActor(canonicalName)) {
+            throw new Error(`Unauthorized or invalid username: "${rawName || 'Anonymous'}"`);
+          }
 
-        // Register in project memory
-        this.memory.userJoined(conn.id, conn.user.name, color);
-        this.memory.userSwitchedFile(conn.id, conn.file);
+          const color = msg.user?.color || this.assignColor();
+          conn.user = {
+            name: canonicalName,
+            color
+          };
 
-        // Send welcome response
-        this.sendJSON(ws, {
-          type: 'welcome',
-          connectionId: conn.id,
-          assignedColor: color,
-          user: conn.user
-        });
+          // Register in project memory
+          this.memory.userJoined(conn.id, conn.user.name, color);
+          this.memory.userSwitchedFile(conn.id, conn.file);
 
-        // Broadcast presence to entire room
-        this.broadcastPresence(conn.room);
+          // Send welcome response
+          this.sendJSON(ws, {
+            type: 'welcome',
+            connectionId: conn.id,
+            assignedColor: color,
+            user: conn.user
+          });
 
-        // Send recent activity history
-        this.sendJSON(ws, {
-          type: 'activityHistory',
-          events: this.memory.getRecentActivity(20)
-        });
+          // Broadcast presence to entire room
+          this.broadcastPresence(conn.room);
 
-        console.log(`👤 ${conn.user.name} joined [${conn.room}] file=[${conn.file}] — color ${color}`);
+          // Send recent activity history
+          this.sendJSON(ws, {
+            type: 'activityHistory',
+            events: this.memory.getRecentActivity(20)
+          });
 
-        // Diagnostic: dump all connections
-        console.log(`🔍 CONNECTION_DUMP (${this.connections.size} total):`);
-        for (const [clientWs, clientConn] of this.connections) {
-          console.log(`   → id=${clientConn.id.slice(0,8)} user=${clientConn.user?.name || '(pending)'} room=${clientConn.room} file=${clientConn.file} wsOpen=${clientWs.readyState === 1}`);
+          // Send initial conflict intelligence data
+          this.sendJSON(ws, {
+            type: 'conflictUpdate',
+            risks: this.memory.getConflictRisks(),
+            ownership: this.memory.getFileOwnership(),
+            locks: this.memory.getLockedFiles()
+          });
+
+          console.log(` ${conn.user.name} joined [${conn.room}] file=[${conn.file}]  color ${color}`);
+        } catch (err) {
+          console.error(` Join rejected: ${err.message}`);
+          this.sendJSON(ws, {
+            type: 'joinFailed',
+            message: err.message
+          });
+          ws.close(4001, err.message);
         }
+        break;
+      }
+
+      case 'lockFile': {
+        const { file, owner } = msg;
+        if (!file || !owner) break;
+        try {
+          this.memory.lockFile(file, owner, 'Locked');
+        } catch (err) {
+          console.warn(`[CollabServer] lockFile failed: ${err.message}`);
+          this.sendJSON(ws, {
+            type: 'lockEnforcement',
+            file,
+            owner: this.memory.fileOwnership.get(file)?.owner || 'unknown',
+            reason: err.message
+          });
+        }
+        break;
+      }
+
+      case 'unlockFile': {
+        const { file, owner } = msg;
+        if (!file) break;
+        try {
+          this.memory.unlockFile(file, owner || 'Manager');
+        } catch (err) {
+          console.warn(`[CollabServer] unlockFile failed: ${err.message}`);
+          this.sendJSON(ws, {
+            type: 'lockEnforcement',
+            file,
+            owner: this.memory.fileLocks.get(file)?.owner || 'unknown',
+            reason: err.message
+          });
+        }
+        break;
+      }
+
+      case 'requestOwnership': {
+        const { file, from, to } = msg;
+        if (!file || !from || !to) break;
+        
+        const event = this.memory.logActivity(from, 'OwnershipRequest', file, { from, to });
+        
+        this.broadcastToRoom(conn.room, {
+          type: 'ownershipRequestReceived',
+          file,
+          from,
+          to,
+          event
+        }, null);
+        break;
+      }
+
+      case 'approveOwnership': {
+        const { file, from, to } = msg;
+        if (!file || !from || !to) break;
+        
+        // Transfer ownership
+        this.memory.transferOwnership(file, from, to, from);
+        
+        const event = this.memory.logActivity(from, 'OwnershipApproved', file, { from, to });
+        
+        this.broadcastToRoom(conn.room, {
+          type: 'ownershipApprovedReceived',
+          file,
+          from,
+          to,
+          event
+        }, null);
+        break;
+      }
+
+      case 'rejectOwnership': {
+        const { file, from, to } = msg;
+        if (!file || !from || !to) break;
+        
+        const event = this.memory.logActivity(from, 'OwnershipRejected', file, { from, to });
+        
+        this.broadcastToRoom(conn.room, {
+          type: 'ownershipRejectedReceived',
+          file,
+          from,
+          to,
+          event
+        }, null);
         break;
       }
 
@@ -603,6 +836,10 @@ class CollabServer {
 
         // Broadcast updated presence
         this.broadcastPresence(conn.room);
+        
+        // Check conflicts and broadcast conflict updates live
+        this.memory.runConflictCheck('file_edit');
+        this.broadcastConflictIntelligence(conn.room);
         break;
       }
 
@@ -614,6 +851,10 @@ class CollabServer {
           connectionId: conn.id,
           cursor: msg.cursor
         }, ws);
+        
+        // Run conflict check and broadcast
+        this.memory.runConflictCheck('file_edit');
+        this.broadcastConflictIntelligence(conn.room);
         break;
       }
 
@@ -647,12 +888,12 @@ class CollabServer {
       }
 
       default:
-        // Unknown message type — ignore silently
+        // Unknown message type  ignore silently
         break;
     }
   }
 
-  // ── Disconnect Handling ──────────────────────────────────
+  //  Disconnect Handling 
 
   handleDisconnect(ws) {
     const conn = this.connections.get(ws);
@@ -682,7 +923,7 @@ class CollabServer {
     // Update project memory
     if (conn.user) {
       this.memory.userLeft(conn.id);
-      console.log(`👋 ${conn.user.name} left [${conn.room}]`);
+      console.log(` ${conn.user.name} left [${conn.room}]`);
     }
 
     // Clean up
@@ -694,7 +935,7 @@ class CollabServer {
     }
   }
 
-  // ── Broadcasting ─────────────────────────────────────────
+  //  Broadcasting 
 
   sendJSON(ws, data) {
     if (ws.readyState === 1) {
@@ -731,7 +972,7 @@ class CollabServer {
   broadcastBinaryToFilePeers(senderWs, room, file, binaryData) {
     const roomSet = this.rooms.get(room);
     if (!roomSet) {
-      console.log(`⚠️ BROADCAST_NO_ROOM room=${room}`);
+      console.log(` BROADCAST_NO_ROOM room=${room}`);
       return;
     }
 
@@ -743,24 +984,24 @@ class CollabServer {
       if (client === senderWs) continue;
       const clientConn = this.connections.get(client);
       if (!clientConn) {
-        console.log(`⚠️ BROADCAST_SKIP reason=no_conn_info`);
+        console.log(` BROADCAST_SKIP reason=no_conn_info`);
         continue;
       }
       if (clientConn.file !== file) {
-        console.log(`⚠️ BROADCAST_SKIP reason=file_mismatch peer=${clientConn.user?.name || clientConn.id} peerFile=${clientConn.file} senderFile=${file}`);
+        console.log(` BROADCAST_SKIP reason=file_mismatch peer=${clientConn.user?.name || clientConn.id} peerFile=${clientConn.file} senderFile=${file}`);
         continue;
       }
       if (client.readyState !== 1) {
-        console.log(`⚠️ BROADCAST_SKIP reason=ws_not_open peer=${clientConn.user?.name || clientConn.id} readyState=${client.readyState}`);
+        console.log(` BROADCAST_SKIP reason=ws_not_open peer=${clientConn.user?.name || clientConn.id} readyState=${client.readyState}`);
         continue;
       }
       client.send(binaryData);
       sentCount++;
-      console.log(`📤 BROADCAST_TO_CLIENT from=${senderName} to=${clientConn.user?.name || clientConn.id} file=${file} size=${binaryData.byteLength || binaryData.length || 0}`);
+      console.log(` BROADCAST_TO_CLIENT from=${senderName} to=${clientConn.user?.name || clientConn.id} file=${file} size=${binaryData.byteLength || binaryData.length || 0}`);
     }
 
     if (sentCount === 0) {
-      console.log(`⚠️ BROADCAST_EMPTY from=${senderName} file=${file} roomSize=${roomSet.size} (no matching peers)`);
+      console.log(` BROADCAST_EMPTY from=${senderName} file=${file} roomSize=${roomSet.size} (no matching peers)`);
     }
   }
 
@@ -769,10 +1010,10 @@ class CollabServer {
     this.broadcastToRoom(room, { type: 'presence', users }, null);
   }
 
-  // ── Public API ───────────────────────────────────────────
+  //  Public API 
 
   broadcastFileReload(fileName, content) {
-    console.log(`📡 Forcing file reload for Yjs document: ${fileName}`);
+    console.log(` Forcing file reload for Yjs document: ${fileName}`);
     for (const roomName of this.rooms.keys()) {
       const docKey = `${roomName}:${fileName}`;
       const doc = this.activeDocuments.get(docKey);
@@ -794,7 +1035,7 @@ class CollabServer {
     return this.connections.size;
   }
 
-  // ── Filesystem Watching (Disk → Editor) ──────────────────
+  //  Filesystem Watching (Disk  Editor) 
 
   setupFileWatcher() {
     const workspaceDir = path.join(process.cwd(), 'workspace');
@@ -805,9 +1046,9 @@ class CollabServer {
         if (!filename) return;
         this.handleDiskFileChange(filename);
       });
-      console.log('👀 Filesystem watcher active on workspace/ directory');
+      console.log(' Filesystem watcher active on workspace/ directory');
     } catch (err) {
-      console.error('❌ Failed to start filesystem watcher:', err.message);
+      console.error(' Failed to start filesystem watcher:', err.message);
     }
   }
 
@@ -841,7 +1082,7 @@ class CollabServer {
         if (!fs.existsSync(filePath)) {
           // File was deleted on disk
           if (this.memory.files.has(normalizedName)) {
-            console.log(`🗑️ Disk Sync: File deleted on disk: ${normalizedName}. Deleting in-memory.`);
+            console.log(` Disk Sync: File deleted on disk: ${normalizedName}. Deleting in-memory.`);
             this.deleteFile(normalizedName, 'disk');
           }
           return;
@@ -851,7 +1092,7 @@ class CollabServer {
         const memoryContent = this.memory.getFileContent(normalizedName);
 
         if (content !== memoryContent) {
-          console.log(`💾 Disk Sync: File modified on disk: ${normalizedName}. Syncing to memory.`);
+          console.log(` Disk Sync: File modified on disk: ${normalizedName}. Syncing to memory.`);
           if (!this.memory.files.has(normalizedName)) {
             this.memory.createFile(normalizedName, content, 'disk');
             // Broadcast fileList to update clients

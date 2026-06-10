@@ -41,10 +41,19 @@ export function buildProjectContext(projectMemory) {
     context += `No files in the workspace.\n`;
   } else {
     for (const [name, meta] of Object.entries(summary.files)) {
-      context += `- File: "${name}" | ${meta.lineCount} lines | Size: ${meta.size} bytes | Version: v${meta.version} | Last modified by: ${meta.lastModifiedBy} at ${meta.lastModified}\n`;
+      context += `- File: "${name}" | ${meta.lineCount} lines | Size: ${meta.size} bytes | Version: v${meta.version} | Owner: ${meta.owner || 'unassigned'} | Lock: ${meta.locked ? `locked by ${meta.lockOwner}` : 'unlocked'} | Branch: ${meta.branch || 'main'} | Conflict: ${meta.conflictStatus || 'Healthy'} | Last modified by: ${meta.lastModifiedBy} at ${meta.lastModified}\n`;
     }
   }
   context += `\n`;
+
+  if (typeof projectMemory.getManagerSnapshot === 'function') {
+    const managerSnapshot = projectMemory.getManagerSnapshot();
+    context += `--- Engineering Manager Coordination State ---\n`;
+    context += `Contributors: ${JSON.stringify(managerSnapshot.contributors)}\n`;
+    context += `Locked Files: ${JSON.stringify(managerSnapshot.locks)}\n`;
+    context += `Conflict Risks: ${JSON.stringify(managerSnapshot.conflictRisks)}\n`;
+    context += `Blocked Tasks: ${JSON.stringify(managerSnapshot.blockedTasks)}\n\n`;
+  }
 
   // 3. Complete file contents (real data, no mocks!)
   context += `--- Full Content of Workspace Files ---\n`;

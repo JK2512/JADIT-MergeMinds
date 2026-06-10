@@ -1,6 +1,6 @@
-// ═══════════════════════════════════════════════════════════════
-// Presence Module — Handles User Identity, Avatars, and Awareness
-// ═══════════════════════════════════════════════════════════════
+// 
+// Presence Module  Handles User Identity, Avatars, and Awareness
+// 
 
 export class PresenceTracker {
   constructor(onUserIdentified) {
@@ -45,6 +45,7 @@ export class PresenceTracker {
         if (e.key === 'Enter') this.handleUsernameSubmit();
       });
     }
+    this.renderHeaderAvatars(null);
   }
 
   handleUsernameSubmit() {
@@ -93,15 +94,36 @@ export class PresenceTracker {
     if (!this.headerAvatars) return;
     this.headerAvatars.innerHTML = '';
 
-    this.users.forEach((u) => {
+    const sourceUsers = this.users.length > 0 ? this.users : (this.currentUser ? [{ ...this.currentUser, id: 'self' }] : []);
+
+    if (sourceUsers.length === 0) {
+      const empty = document.createElement('span');
+      empty.className = 'presence-empty';
+      empty.textContent = 'No active collaborators';
+      this.headerAvatars.appendChild(empty);
+      return;
+    }
+
+    const visibleUsers = sourceUsers.slice(0, 4);
+    const overflowCount = Math.max(0, sourceUsers.length - visibleUsers.length);
+
+    visibleUsers.forEach((u) => {
       const isSelf = u.id === selfConnectionId;
       const avatar = document.createElement('div');
       avatar.className = `header-avatar ${isSelf ? 'user-self' : ''}`;
       avatar.style.backgroundColor = u.color || '#fc6d26';
-      avatar.title = `${u.name} ${isSelf ? '(You)' : ''} — editing ${u.currentFile || 'nothing'}`;
+      avatar.title = `${u.name} ${isSelf ? '(You)' : ''}  editing ${u.currentFile || 'nothing'}`;
       avatar.textContent = this.getInitials(u.name);
       this.headerAvatars.appendChild(avatar);
     });
+
+    if (overflowCount > 0) {
+      const overflow = document.createElement('div');
+      overflow.className = 'header-avatar avatar-overflow';
+      overflow.title = `${overflowCount} more collaborators online`;
+      overflow.textContent = `+${overflowCount}`;
+      this.headerAvatars.appendChild(overflow);
+    }
   }
 
   renderSidebarList(selfConnectionId) {
@@ -133,7 +155,7 @@ export class PresenceTracker {
 
       const fileSpan = document.createElement('span');
       fileSpan.className = 'presence-file';
-      fileSpan.textContent = u.currentFile ? `📂 ${u.currentFile}` : '💤 idle';
+      fileSpan.textContent = u.currentFile ? ` ${u.currentFile}` : ' idle';
 
       info.appendChild(nameSpan);
       info.appendChild(fileSpan);

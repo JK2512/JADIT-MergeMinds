@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { streamChat } from './ai-engine.js';
+import { routeAgentRequest } from './agent-router.js';
 
 // Global AI Request Queue
 const requestQueue = [];
@@ -48,7 +49,7 @@ function enqueueChatRequest(req, res, projectMemory) {
 }
 
 async function runChatRequest(req, res, projectMemory) {
-  const { message, history, username, agentId } = req.body;
+  const { message, history, username, agentId, currentFile, currentFileContent } = req.body;
 
   // Check if this is a welcome summary request and is cached
   const isWelcomeRequest = username && (
@@ -60,6 +61,18 @@ async function runChatRequest(req, res, projectMemory) {
     console.log(`ℹ️ [ChatService] Serving cached welcome summary for user: ${username}`);
     const cachedSummary = welcomeSummaryCache.get(username);
     res.write(`data: ${JSON.stringify({ text: cachedSummary })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
+    return;
+  }
+
+  const routedAgentResponse = await routeAgentRequest({ message, agentId, currentFile, currentFileContent, username }, projectMemory);
+  if (routedAgentResponse?.text) {
+    console.log('[ChatService] AgentRouter response', {
+      agentType: routedAgentResponse.agentType,
+      source: routedAgentResponse.source
+    });
+    res.write(`data: ${JSON.stringify({ text: routedAgentResponse.text })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
     return;

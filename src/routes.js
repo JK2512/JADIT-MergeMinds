@@ -5,6 +5,7 @@
 
 import express from 'express';
 import { handleChatRequest } from './chat-service.js';
+import { gitlabService } from './gitlab-service.js';
 
 export function setupRoutes(app, projectMemory, collabServer) {
   app.use(express.json());
@@ -13,6 +14,19 @@ export function setupRoutes(app, projectMemory, collabServer) {
 
   app.post('/api/ai/chat', (req, res) => {
     handleChatRequest(req, res, projectMemory);
+  });
+
+  app.get('/api/gitlab/health', async (req, res) => {
+    try {
+      const health = await gitlabService.healthCheck();
+      res.status(health.status === 'success' ? 200 : 503).json(health);
+    } catch (err) {
+      res.status(500).json({
+        status: 'error',
+        message: err.message,
+        missing: err.missing || []
+      });
+    }
   });
 
   // ── File Management REST API ─────────────────────────────
@@ -114,6 +128,24 @@ export function setupRoutes(app, projectMemory, collabServer) {
       users: projectMemory.getActiveUsers(),
       total: projectMemory.activeSessions.size
     });
+  });
+
+  // ── Conflict Intelligence Endpoints ───────────────────────
+
+  app.get('/api/project/ownership', (req, res) => {
+    res.json({ ownership: projectMemory.getFileOwnership() });
+  });
+
+  app.get('/api/project/locks', (req, res) => {
+    res.json({ locks: projectMemory.getLockedFiles() });
+  });
+
+  app.get('/api/project/conflicts', (req, res) => {
+    res.json({ risks: projectMemory.getConflictRisks() });
+  });
+
+  app.get('/api/project/manager-snapshot', (req, res) => {
+    res.json(projectMemory.getManagerSnapshot());
   });
 
   // ── Project Summary (used by AI in Phase 2) ──────────────

@@ -93,9 +93,9 @@ async function runTest() {
   });
 
   await Promise.all([
-    openPromise(clientA, 'Client A', 'Developer A'),
-    openPromise(clientB, 'Client B', 'Developer B'),
-    openPromise(clientC, 'Client C', 'Developer C')
+    openPromise(clientA, 'Jiya', 'Jiya'),
+    openPromise(clientB, 'Aman', 'Aman'),
+    openPromise(clientC, 'Riya', 'Riya')
   ]);
 
   // Wait for initial sync and welcomes
@@ -136,7 +136,7 @@ async function runTest() {
       body: JSON.stringify({
         fileName: 'auth.js',
         content: '// Auth Helper\n',
-        userName: 'Developer A'
+        userName: 'Jiya'
       })
     });
     const resData = await response.json();

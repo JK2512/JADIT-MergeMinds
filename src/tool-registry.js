@@ -83,9 +83,33 @@ const CREATE_BRANCH_DECLARATION = {
       ref: {
         type: "STRING",
         description: "The source branch or commit SHA to branch off from. Defaults to 'main'."
+      },
+      sourceBranch: {
+        type: "STRING",
+        description: "Alias for ref. The source branch or commit SHA to branch off from."
       }
     },
     required: ["branchName"]
+  }
+};
+
+const GET_PROJECT_INFO_DECLARATION = {
+  name: "get_gitlab_project_info",
+  description: "Get GitLab project metadata and verify that the configured token can access the project.",
+  parameters: {
+    type: "OBJECT",
+    properties: {},
+    required: []
+  }
+};
+
+const GITLAB_HEALTH_DECLARATION = {
+  name: "gitlab_health_check",
+  description: "Validate GitLab configuration, token access, and project reachability.",
+  parameters: {
+    type: "OBJECT",
+    properties: {},
+    required: []
   }
 };
 
@@ -111,9 +135,35 @@ const CREATE_ISSUE_DECLARATION = {
     type: "OBJECT",
     properties: {
       title: { type: "STRING", description: "The title of the issue" },
-      description: { type: "STRING", description: "Detailed description of the issue" }
+      description: { type: "STRING", description: "Detailed description of the issue" },
+      labels: { type: "STRING", description: "Optional comma-separated labels to attach to the issue." }
     },
     required: ["title"]
+  }
+};
+
+const LIST_ISSUES_DECLARATION = {
+  name: "list_gitlab_issues",
+  description: "List GitLab issues for the configured project.",
+  parameters: {
+    type: "OBJECT",
+    properties: {
+      state: {
+        type: "STRING",
+        description: "Filter by issue state. Defaults to 'opened'. Valid values: 'opened', 'closed', 'all'."
+      }
+    },
+    required: []
+  }
+};
+
+const LIST_BRANCHES_DECLARATION = {
+  name: "list_gitlab_branches",
+  description: "List branches in the configured GitLab project.",
+  parameters: {
+    type: "OBJECT",
+    properties: {},
+    required: []
   }
 };
 
@@ -161,11 +211,27 @@ const CREATE_MR_DECLARATION = {
 
 // Register Tools
 toolRegistry.register(
+  "get_gitlab_project_info",
+  GET_PROJECT_INFO_DECLARATION,
+  async () => {
+    return await gitlabService.getProjectInfo();
+  }
+);
+
+toolRegistry.register(
+  "gitlab_health_check",
+  GITLAB_HEALTH_DECLARATION,
+  async () => {
+    return await gitlabService.healthCheck();
+  }
+);
+
+toolRegistry.register(
   "create_branch",
   CREATE_BRANCH_DECLARATION,
   async (args) => {
-    const { branchName, ref } = args;
-    return await gitlabService.createBranch(branchName, ref || 'main');
+    const { branchName, ref, sourceBranch } = args;
+    return await gitlabService.createBranch(branchName, sourceBranch || ref || 'main');
   }
 );
 
@@ -181,8 +247,24 @@ toolRegistry.register(
   "create_gitlab_issue",
   CREATE_ISSUE_DECLARATION,
   async (args) => {
-    const { title, description } = args;
-    return await gitlabService.createIssue(title, description || '');
+    const { title, description, labels } = args;
+    return await gitlabService.createIssue(title, description || '', { labels });
+  }
+);
+
+toolRegistry.register(
+  "list_gitlab_issues",
+  LIST_ISSUES_DECLARATION,
+  async (args) => {
+    return await gitlabService.listIssues(args.state || 'opened');
+  }
+);
+
+toolRegistry.register(
+  "list_gitlab_branches",
+  LIST_BRANCHES_DECLARATION,
+  async () => {
+    return await gitlabService.listBranches();
   }
 );
 

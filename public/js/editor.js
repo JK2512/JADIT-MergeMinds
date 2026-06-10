@@ -1,6 +1,6 @@
-// ═══════════════════════════════════════════════════════════════
-// Editor Module — Monaco Editor & Yjs Binary Sync Client
-// ═══════════════════════════════════════════════════════════════
+// 
+// Editor Module  Monaco Editor & Yjs Binary Sync Client
+// 
 
 export class CodeEditor {
   constructor(containerId, onContentChanged, onCursorChanged) {
@@ -170,15 +170,17 @@ export class CodeEditor {
     
     // Bind Yjs update event to send updates to the WebSocket server
     this.doc.on('update', (update, origin) => {
-      if (origin !== 'remote' && this.onContentChanged) {
+      if (origin !== 'remote' && origin !== 'init' && this.onContentChanged) {
         this.onContentChanged(update);
       }
     });
 
     this.isApplyingRemote = true;
-    if (fileContent) {
-      this.yText.insert(0, fileContent);
-    }
+    this.doc.transact(() => {
+      if (fileContent) {
+        this.yText.insert(0, fileContent);
+      }
+    }, 'init');
     this.editor.setValue(this.yText.toString());
     this.isApplyingRemote = false;
 
@@ -346,6 +348,16 @@ export class CodeEditor {
     if (this.editor) {
       this.editor.updateOptions({ fontSize: size });
     }
+  }
+
+  getValue() {
+    if (this.textarea) {
+      return this.textarea.value;
+    }
+    if (this.editor && typeof this.editor.getValue === 'function') {
+      return this.editor.getValue();
+    }
+    return '';
   }
 
   layout() {
