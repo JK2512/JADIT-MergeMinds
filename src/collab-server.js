@@ -21,7 +21,7 @@ const USER_COLORS = [
 // Demo project seed files  realistic content for a compelling demo
 const SEED_FILES = {
   'main.js': `// Main Application Entry Point
-// GitLab Co-Pilot Live  Hackathon Demo Project
+// JADIT  Hackathon Demo Project
 
 import config from './config.js';
 import { setupRoutes } from './api.js';
@@ -91,7 +91,7 @@ export function deepClone(obj) {
 
 const config = {
   app: {
-    name: 'GitLab Co-Pilot Demo',
+    name: 'JADIT Demo',
     version: '1.0.0',
     port: process.env.PORT || 3000,
     env: process.env.NODE_ENV || 'development'

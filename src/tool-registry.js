@@ -387,6 +387,12 @@ export function registerFileTools(projectMemory, collabServer) {
         // Broadcast the activity event to all peers in all rooms
         for (const roomName of collabServer.rooms.keys()) {
           collabServer.broadcastToRoom(roomName, { type: 'activity', event }, null);
+          if (!existed) {
+            collabServer.broadcastToRoom(roomName, {
+              type: 'fileList',
+              files: projectMemory.getFileNames()
+            });
+          }
         }
         // Force Yjs document update to sync Monaco editor
         collabServer.broadcastFileReload(fileName, content);

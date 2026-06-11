@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 // 
-// Project Memory  The brain of GitLab Co-Pilot Live
+// Project Memory  The brain of JADIT
 // Tracks all file state, activity events, and user sessions.
 // This data is consumed by the AI Engine for project understanding.
 // 
@@ -371,10 +371,15 @@ class ProjectMemory {
   lockFile(fileName, owner, status = 'Editing') {
     const canonicalOwner = getCanonicalUsername(owner);
     if (!canonicalOwner) throw new Error(`Unknown lock user: "${owner}"`);
-    const ownership = this.fileOwnership.get(fileName);
-    const ownerName = ownership?.owner || null;
-    if (!ownerName || ownerName !== canonicalOwner) {
-      throw new Error(`This file is owned by ${ownerName || 'nobody'}. Request ownership from owner or manager.`);
+    let ownership = this.fileOwnership.get(fileName);
+    let ownerName = ownership?.owner || null;
+    if (!ownerName) {
+      this.assignOwnership(fileName, canonicalOwner, 'Auto Lock Assignment');
+      ownership = this.fileOwnership.get(fileName);
+      ownerName = ownership?.owner || null;
+    }
+    if (ownerName !== canonicalOwner) {
+      throw new Error(`This file is owned by ${ownerName}. Request ownership from owner or manager.`);
     }
     const lock = { fileName, owner: canonicalOwner, status, lockedAt: new Date().toISOString(), lastActivityAt: new Date().toISOString() };
     this.fileLocks.set(fileName, lock);

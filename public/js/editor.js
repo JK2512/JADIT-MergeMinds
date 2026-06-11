@@ -441,6 +441,12 @@ export class CodeEditor {
     }
   }
 
+  setReadOnly(readOnly) {
+    if (this.editor && typeof this.editor.updateOptions === 'function') {
+      this.editor.updateOptions({ readOnly: readOnly });
+    }
+  }
+
   getValue() {
     if (this.textarea) {
       return this.textarea.value;

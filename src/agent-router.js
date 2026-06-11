@@ -146,32 +146,8 @@ function routeAgent(message, agentId) {
     console.log('[Route:Manager]', { message });
     return 'manager';
   }
-  if (/\b(review|find bugs|bug|bugs|code quality|current file)\b/.test(text)) {
-    console.log('[Route:Reviewer]', { message });
-    return 'reviewer';
-  }
-  if (/\b(security|scan project|secret|token|password|eval|shell)\b/.test(text)) return 'security';
-  if (/\b(what should i do next|generate tasks|tasks|plan|planner|next)\b/.test(text)) {
-    console.log('[Route:Planner]', { message });
-    return 'planner';
-  }
-  if (/\b(can we deploy|deployment readiness|deploy|build|pipeline|release|ship)\b/.test(text)) return 'devops';
-  if (/\b(catch me up|project summary|project status|team summary|what happened|manager|coordinate)\b/.test(text)) {
-    console.log('[Route:Manager]', { message });
-    return 'manager';
-  }
 
-  const agentMap = {
-    reviewer: 'reviewer',
-    security: 'security',
-    planner: 'planner',
-    devops: 'devops',
-    manager: 'manager'
-  };
-  if (agentMap[agentId]) {
-    console.log(`[Route:${agentMap[agentId][0].toUpperCase()}${agentMap[agentId].slice(1)}]`, { message, agentId });
-    return agentMap[agentId];
-  }
+  // General natural language queries fall through to the real Gemini AI model (streamChat)
   return null;
 }
 
@@ -1112,7 +1088,7 @@ async function gitlabActionsAgent(message, projectMemory = null) {
     toolName = 'create_gitlab_issue';
     args = {
       title,
-      description: description || 'Created from GitLab Co-Pilot Live agent action.',
+      description: description || 'Created from JADIT agent action.',
       labels: /security/i.test(message) ? 'security,high-priority' : ''
     };
   } else if (/create\s+(an?\s+)?(merge request|mr)/.test(text)) {
@@ -1134,7 +1110,7 @@ async function gitlabActionsAgent(message, projectMemory = null) {
       sourceBranch,
       targetBranch: extractFlag(message, 'target') || 'main',
       title,
-      description: extractFlag(message, 'description') || 'Merge request prepared by GitLab Co-Pilot Live agent.'
+      description: extractFlag(message, 'description') || 'Merge request prepared by JADIT agent.'
     };
   }
 

@@ -8,6 +8,7 @@ import CollabServer from './src/collab-server.js';
 import { setupRoutes } from './src/routes.js';
 import { registerFileTools } from './src/tool-registry.js';
 import { gitlabService } from './src/gitlab-service.js';
+import mcpClient from './src/mcp-client.js';
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -24,10 +25,11 @@ const projectMemory = new ProjectMemory('hackathon-demo');
 const collabServer = new CollabServer(server, projectMemory);
 
 registerFileTools(projectMemory, collabServer);
+mcpClient.start().catch(console.error);
 setupRoutes(app, projectMemory, collabServer);
 
 server.listen(port, () => {
-  console.log(`GitLab Co-Pilot Live Operational at http://localhost:${port}`);
+  console.log(`JADIT Operational at http://localhost:${port}`);
   gitlabService.healthCheck()
     .then((health) => {
       if (health.status === 'success') {

@@ -163,6 +163,7 @@ class WorkspaceApp {
 
       // 8. Initialize Lock/Unlock UI
       this.initFileLockUI();
+      this.initBellNotifications();
       
       await this.updateProjectHealth();
       setInterval(() => this.updateProjectHealth(), 10000);
@@ -943,6 +944,14 @@ class WorkspaceApp {
       case 'ownershipRequest':
       case 'ownershipRequestReceived': {
         const mappedMsg = { file: msg.file, owner: msg.owner || msg.from, requester: msg.requester || msg.to };
+        // Send bell notification to the owner
+        this.addBellNotification({
+          type: 'ownership_request',
+          title: 'Ownership Request',
+          message: `${mappedMsg.requester} wants ownership of ${mappedMsg.file}`,
+          data: mappedMsg,
+          time: new Date()
+        });
         this.handleOwnershipApprovalModal(mappedMsg);
         break;
       }
@@ -1255,12 +1264,22 @@ class WorkspaceApp {
       const isLocked = status?.statusLabel === 'Locked' || status?.lockOwner;
       item.className = `tree-item ${fileName === this.currentFile ? 'active' : ''} ${statusClass} ${isLocked ? 'file-locked' : ''}`;
       item.title = status?.tooltip || fileName;
+      
+      let dotClass = 'dot-healthy';
+      if (status) {
+        if (status.statusLabel === 'Locked') {
+          dotClass = 'dot-locked';
+        } else if (status.statusLabel === 'Active Conflict') {
+          dotClass = 'dot-active-conflict';
+        } else if (status.statusLabel === 'Conflict Risk') {
+          dotClass = 'dot-conflict-risk';
+        }
+      }
+
       item.innerHTML = `
         <span class="icon">${this.getFileIcon(fileName)}</span>
         <span class="label">${fileName}</span>
-        ${status ? `<span class="file-status-badge" style="color:${status.statusColor}">${status.statusIcon || ''}</span>` : ''}
-        ${isLocked ? `<span class="file-lock-icon"></span>` : ''}
-        ${status?.owner ? `<span class="file-owner-tag" title="Owner: ${status.owner}">${status.owner}</span>` : ''}
+        <span class="file-status-dot ${dotClass}" title="${status?.statusLabel || 'Healthy'}"></span>
       `;
       item.onclick = () => this.switchFile(fileName);
       children.appendChild(item);
@@ -1653,11 +1672,61 @@ class WorkspaceApp {
     const rejectBtn = document.getElementById('ownership-reject-btn');
     const modal = document.getElementById('ownership-approval-modal');
     approveBtn?.addEventListener('click', () => {
-      if (this._pendingOwnershipRequest) { this.sendJSON({ type: 'approveOwnership', ...this._pendingOwnershipRequest }); this.notifications?.show(` Approved`, 'success'); this._pendingOwnershipRequest = null; }
+      if (this._pendingOwnershipRequest) {
+        const file = this._pendingOwnershipRequest.file;
+        const requester = this._pendingOwnershipRequest.requester || this._pendingOwnershipRequest.to;
+        this.sendJSON({
+          type: 'approveOwnership',
+          file: file,
+          from: this._pendingOwnershipRequest.owner || this._pendingOwnershipRequest.from,
+          to: requester
+        });
+        this.notifications?.show(` Approved`, 'success');
+        
+        // Remove corresponding bell notification
+        if (this._bellNotifications) {
+          const idx = this._bellNotifications.findIndex(n => 
+            n.type === 'ownership_request' && 
+            n.data && 
+            n.data.file === file && 
+            (n.data.requester === requester || n.data.to === requester)
+          );
+          if (idx !== -1) {
+            this._bellNotifications.splice(idx, 1);
+            this.renderBellDropdown();
+          }
+        }
+        this._pendingOwnershipRequest = null;
+      }
       modal?.classList.add('hidden');
     });
     rejectBtn?.addEventListener('click', () => {
-      if (this._pendingOwnershipRequest) { this.sendJSON({ type: 'rejectOwnership', ...this._pendingOwnershipRequest }); this.notifications?.show(` Rejected`, 'warning'); this._pendingOwnershipRequest = null; }
+      if (this._pendingOwnershipRequest) {
+        const file = this._pendingOwnershipRequest.file;
+        const requester = this._pendingOwnershipRequest.requester || this._pendingOwnershipRequest.to;
+        this.sendJSON({
+          type: 'rejectOwnership',
+          file: file,
+          from: this._pendingOwnershipRequest.owner || this._pendingOwnershipRequest.from,
+          to: requester
+        });
+        this.notifications?.show(` Rejected`, 'warning');
+        
+        // Remove corresponding bell notification
+        if (this._bellNotifications) {
+          const idx = this._bellNotifications.findIndex(n => 
+            n.type === 'ownership_request' && 
+            n.data && 
+            n.data.file === file && 
+            (n.data.requester === requester || n.data.to === requester)
+          );
+          if (idx !== -1) {
+            this._bellNotifications.splice(idx, 1);
+            this.renderBellDropdown();
+          }
+        }
+        this._pendingOwnershipRequest = null;
+      }
       modal?.classList.add('hidden');
     });
     this.updateFileLockUI();
@@ -1676,23 +1745,31 @@ class WorkspaceApp {
     const isLocked = status?.statusLabel === 'Locked' || !!status?.lockOwner;
     const fileOwner = status?.owner || null;
     
-    const isOwner = !fileOwner || fileOwner.toLowerCase() === currentUser.toLowerCase();
+    // If no owner assigned, current user is treated as de facto owner (can lock)
+    const isOwner = !fileOwner || (fileOwner.toLowerCase() === currentUser.toLowerCase());
     const isLockedByMe = status?.lockOwner && status.lockOwner.toLowerCase() === currentUser.toLowerCase();
+    const isLockedBySomeoneElse = isLocked && !isLockedByMe;
 
-    if (isOwner) {
+    if (isOwner && !isLockedBySomeoneElse) {
       requestOwnershipBtn?.classList.add('hidden');
-      if (isLocked) {
+      if (isLocked && isLockedByMe) {
         lockBtn.classList.add('hidden');
         unlockBtn.classList.remove('hidden');
-        unlockBtn.disabled = !isLockedByMe;
-      } else {
+      } else if (!isLocked) {
         lockBtn.classList.remove('hidden');
+        unlockBtn.classList.add('hidden');
+      } else {
+        lockBtn.classList.add('hidden');
         unlockBtn.classList.add('hidden');
       }
     } else {
       lockBtn.classList.add('hidden');
       unlockBtn.classList.add('hidden');
       requestOwnershipBtn?.classList.remove('hidden');
+    }
+
+    if (this.editor && typeof this.editor.setReadOnly === 'function') {
+      this.editor.setReadOnly(isLockedBySomeoneElse);
     }
 
     if (lockBadge) {
@@ -1714,19 +1791,243 @@ class WorkspaceApp {
   }
 
   handleOwnershipApprovalModal(msg) {
-    const modal = document.getElementById('ownership-approval-modal');
-    if (!modal) return;
     const currentUser = this.presence?.currentUser?.name || '';
     if (msg.owner && msg.owner.toLowerCase() !== currentUser.toLowerCase()) return;
-    this._pendingOwnershipRequest = { file: msg.file, requester: msg.requester, owner: msg.owner };
-    const fileEl = document.getElementById('ownership-request-file');
-    const userEl = document.getElementById('ownership-request-user');
-    const ownerEl = document.getElementById('ownership-request-owner');
-    if (fileEl) fileEl.textContent = msg.file || '-';
-    if (userEl) userEl.textContent = msg.requester || '-';
-    if (ownerEl) ownerEl.textContent = msg.owner || '-';
-    modal.classList.remove('hidden');
-    this.notifications?.show(` Ownership request from ${msg.requester} for ${msg.file}`, 'info');
+
+    const file = msg.file;
+    const requester = msg.requester;
+    const owner = msg.owner;
+
+    const contentHtml = `
+      <div style="flex: 1;">
+        <div style="font-weight: 600; margin-bottom: 4px;">🔑 Ownership Request</div>
+        <div style="margin-bottom: 8px;"><strong>${requester}</strong> wants ownership of <code>${file}</code></div>
+        <div class="toast-actions">
+          <button class="toast-btn toast-btn-approve">Approve</button>
+          <button class="toast-btn toast-btn-reject">Reject</button>
+        </div>
+      </div>
+    `;
+
+    // Show with duration = 0 so it stays visible until answered
+    const toast = this.notifications?.show(contentHtml, 'info', 0);
+
+    if (toast) {
+      const approveBtn = toast.querySelector('.toast-btn-approve');
+      const rejectBtn = toast.querySelector('.toast-btn-reject');
+
+      approveBtn?.addEventListener('click', () => {
+        this.sendJSON({
+          type: 'approveOwnership',
+          file: file,
+          from: owner,
+          to: requester
+        });
+        this.notifications?.dismiss(toast);
+
+        // Remove corresponding bell notification
+        if (this._bellNotifications) {
+          const idx = this._bellNotifications.findIndex(n =>
+            n.type === 'ownership_request' &&
+            n.data &&
+            n.data.file === file &&
+            (n.data.requester === requester || n.data.to === requester)
+          );
+          if (idx !== -1) {
+            this._bellNotifications.splice(idx, 1);
+            this.renderBellDropdown();
+          }
+        }
+      });
+
+      rejectBtn?.addEventListener('click', () => {
+        this.sendJSON({
+          type: 'rejectOwnership',
+          file: file,
+          from: owner,
+          to: requester
+        });
+        this.notifications?.dismiss(toast);
+
+        // Remove corresponding bell notification
+        if (this._bellNotifications) {
+          const idx = this._bellNotifications.findIndex(n =>
+            n.type === 'ownership_request' &&
+            n.data &&
+            n.data.file === file &&
+            (n.data.requester === requester || n.data.to === requester)
+          );
+          if (idx !== -1) {
+            this._bellNotifications.splice(idx, 1);
+            this.renderBellDropdown();
+          }
+        }
+      });
+    }
+  }
+
+  // ── Bell Notification System ────────────────────────────────
+  initBellNotifications() {
+    this._bellNotifications = [];
+    const bellBtn = document.querySelector('.notification-indicator-btn');
+    if (!bellBtn) return;
+
+    // Add badge counter
+    const badge = document.createElement('span');
+    badge.id = 'bell-badge';
+    badge.className = 'bell-badge hidden';
+    badge.textContent = '0';
+    bellBtn.style.position = 'relative';
+    bellBtn.appendChild(badge);
+
+    // Create dropdown panel
+    const dropdown = document.createElement('div');
+    dropdown.id = 'bell-dropdown';
+    dropdown.className = 'bell-dropdown hidden';
+    dropdown.innerHTML = `
+      <div class="bell-dropdown-header">
+        <span>Notifications</span>
+        <button id="bell-clear-all" class="bell-clear-btn">Clear All</button>
+      </div>
+      <div class="bell-dropdown-body" id="bell-dropdown-body">
+        <div class="bell-empty">No notifications</div>
+      </div>
+    `;
+    bellBtn.parentElement.style.position = 'relative';
+    bellBtn.parentElement.appendChild(dropdown);
+
+    // Toggle dropdown on click
+    bellBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('hidden');
+    });
+
+    // Close on outside click
+    document.addEventListener('click', () => {
+      dropdown.classList.add('hidden');
+    });
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    // Clear all button
+    document.getElementById('bell-clear-all')?.addEventListener('click', () => {
+      this._bellNotifications = [];
+      this.renderBellDropdown();
+    });
+  }
+
+  addBellNotification(notification) {
+    if (!this._bellNotifications) this._bellNotifications = [];
+    this._bellNotifications.unshift(notification);
+    // Cap at 50
+    if (this._bellNotifications.length > 50) this._bellNotifications.pop();
+    this.renderBellDropdown();
+
+    // Pulse the bell icon
+    const bellBtn = document.querySelector('.notification-indicator-btn');
+    if (bellBtn) {
+      bellBtn.classList.add('bell-pulse');
+      setTimeout(() => bellBtn.classList.remove('bell-pulse'), 1000);
+    }
+  }
+
+  renderBellDropdown() {
+    const body = document.getElementById('bell-dropdown-body');
+    const badge = document.getElementById('bell-badge');
+    if (!body) return;
+
+    const items = this._bellNotifications || [];
+
+    if (badge) {
+      if (items.length > 0) {
+        badge.textContent = items.length > 9 ? '9+' : items.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    if (items.length === 0) {
+      body.innerHTML = '<div class="bell-empty">No notifications</div>';
+      return;
+    }
+
+    body.innerHTML = items.map((n, i) => {
+      const icon = n.type === 'ownership_request' ? '🔑'
+                 : n.type === 'conflict' ? '⚠️'
+                 : n.type === 'lock' ? '🔒'
+                 : 'ℹ️';
+      const ago = this._timeAgo(n.time);
+
+      let actionsHtml = '';
+      if (n.type === 'ownership_request' && n.data) {
+        actionsHtml = `
+          <div class="bell-actions">
+            <button class="bell-action-btn grant-btn" data-index="${i}">Grant</button>
+            <button class="bell-action-btn reject-btn" data-index="${i}">Reject</button>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="bell-item" data-index="${i}">
+          <span class="bell-item-icon">${icon}</span>
+          <div class="bell-item-content">
+            <div class="bell-item-title">${n.title}</div>
+            <div class="bell-item-msg">${n.message}</div>
+            ${actionsHtml}
+            <div class="bell-item-time">${ago}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach click handlers using request details
+    body.querySelectorAll('.grant-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(btn.getAttribute('data-index'));
+        const n = this._bellNotifications[index];
+        if (n && n.data) {
+          this.sendJSON({
+            type: 'approveOwnership',
+            file: n.data.file,
+            from: n.data.owner || n.data.from,
+            to: n.data.requester || n.data.to
+          });
+          this.notifications?.show('Ownership request approved!', 'success');
+          this._bellNotifications.splice(index, 1);
+          this.renderBellDropdown();
+        }
+      });
+    });
+
+    body.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(btn.getAttribute('data-index'));
+        const n = this._bellNotifications[index];
+        if (n && n.data) {
+          this.sendJSON({
+            type: 'rejectOwnership',
+            file: n.data.file,
+            from: n.data.owner || n.data.from,
+            to: n.data.requester || n.data.to
+          });
+          this.notifications?.show('Ownership request rejected.', 'warning');
+          this._bellNotifications.splice(index, 1);
+          this.renderBellDropdown();
+        }
+      });
+    });
+  }
+
+  _timeAgo(time) {
+    if (!time) return '';
+    const s = Math.floor((Date.now() - new Date(time).getTime()) / 1000);
+    if (s < 5) return 'just now';
+    if (s < 60) return `${s}s ago`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    return `${Math.floor(s / 3600)}h ago`;
   }
 
   initDemoActions() {
@@ -3468,6 +3769,6 @@ class WorkspaceApp {
 
 // Instantiate and initialize the app on page load
 window.addEventListener('DOMContentLoaded', () => {
-  const app = new WorkspaceApp();
-  app.init().catch(console.error);
+  window.app = new WorkspaceApp();
+  window.app.init().catch(console.error);
 });

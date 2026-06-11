@@ -73,6 +73,44 @@ export class NotificationSystem {
       .toast-close-btn:hover {
         color: var(--text-primary);
       }
+      .toast-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .toast-btn {
+        background: var(--bg-surface-elevated, rgba(255,255,255,0.05));
+        border: 1px solid var(--border-default, rgba(255,255,255,0.1));
+        color: var(--text-primary, #fff);
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+        font-family: var(--font-ui), sans-serif;
+      }
+      .toast-btn:active {
+        transform: scale(0.96);
+      }
+      .toast-btn-approve {
+        background: rgba(0, 245, 109, 0.15);
+        border-color: rgba(0, 245, 109, 0.3);
+        color: #8bffb2;
+      }
+      .toast-btn-approve:hover {
+        background: rgba(0, 245, 109, 0.25);
+        border-color: rgba(0, 245, 109, 0.5);
+      }
+      .toast-btn-reject {
+        background: rgba(248, 81, 73, 0.15);
+        border-color: rgba(248, 81, 73, 0.3);
+        color: #ff8b8b;
+      }
+      .toast-btn-reject:hover {
+        background: rgba(248, 81, 73, 0.25);
+        border-color: rgba(248, 81, 73, 0.5);
+      }
     `;
     document.head.appendChild(style);
   }

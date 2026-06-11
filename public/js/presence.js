@@ -17,11 +17,17 @@ export class PresenceTracker {
   }
 
   init() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlName = urlParams.get('username');
+    
     // Check localStorage for saved username
-    const savedName = localStorage.getItem('gitlabs_username');
+    const savedName = urlName || localStorage.getItem('gitlabs_username');
     const savedColor = localStorage.getItem('gitlabs_color');
     
     if (savedName) {
+      if (urlName) {
+        localStorage.setItem('gitlabs_username', urlName);
+      }
       this.currentUser = { name: savedName, color: savedColor || this.getRandomColor() };
       localStorage.setItem('gitlabs_color', this.currentUser.color); // ensure saved
       

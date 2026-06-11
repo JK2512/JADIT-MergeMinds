@@ -179,7 +179,7 @@ export function setupRoutes(app, projectMemory, collabServer) {
 
   app.post('/api/demo/reset', (req, res) => {
     try {
-      const cleanCode = `#include <iostream>\nusing namespace std;\nint main() {\n    cout << "GitLab Co-Pilot Live: Build successful!" << endl;\n    return 0;\n}\n`;
+      const cleanCode = `#include <iostream>\nusing namespace std;\nint main() {\n    cout << "JADIT: Build successful!" << endl;\n    return 0;\n}\n`;
       projectMemory.updateFile('hi.cpp', cleanCode, 'devops');
       projectMemory.logActivity('Devops Specialist', 'pipeline_passed', 'hi.cpp', {
         message: 'All unit tests and builds successful',
