@@ -31,7 +31,7 @@ Developers continue to struggle with:
 - Context switching between reviews, deployments, planning, and coding
 - AI assistants with limited project-wide awareness
 
-**JADIT Merge Minds** addresses these problems by transforming a traditional IDE into a **Collaborative Engineering Operating System** where developers and AI agents work together in a shared intelligent workspace.
+**JADIT Merge Minds** addresses these problems by transforming a traditional IDE into a **Collaborative Engineering IDE** where developers and AI agents work together in a shared intelligent workspace.
 
 Rather than acting as a simple chatbot, JADIT introduces specialized engineering agents capable of:
 
