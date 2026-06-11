@@ -546,7 +546,7 @@ npm run desktop
 
 ## Dashboard
 
-(Add Screenshot)
+<img width="959" height="476" alt="image" src="https://github.com/user-attachments/assets/55f38650-ff02-4048-9896-1ed88c0e94e3" />
 
 ---
 
