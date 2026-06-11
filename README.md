@@ -635,6 +635,7 @@ Built for the **Building Agents for Real-World Challenges Hackathon**
 ### Team JADIT
 
 - Jiya Kathuria
+- Arnav Majithia
 - Contributors & Collaborators
 
 ---
