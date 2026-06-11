@@ -570,7 +570,6 @@ npm run desktop
 
 <img width="959" height="83" alt="image" src="https://github.com/user-attachments/assets/0250789b-34da-473b-aa24-a9a3a7bd98ce" />
 <img width="724" height="434" alt="image" src="https://github.com/user-attachments/assets/7bb0e875-1cfa-40ab-8b9b-e5e2702d0ac9" />
-### Lock System
 
 - Lock if you are the file owner.
 - Request ownership transfer.
