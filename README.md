@@ -1,138 +1,664 @@
-# JADIT Merge Minds 🚀
-### AI Engineering Manager Platform & Collaborative Operating System
-*Designed for the Building Agents for Real-World Challenges Hackathon*
+# 🚀 JADIT Merge Minds
+
+<div align="center">
+
+# AI-Powered Collaborative Engineering Operating System
+
+### Built for the Building Agents for Real-World Challenges Hackathon
+
+Transforming software development from isolated coding into an intelligent human-AI collaborative engineering experience.
+
+🌐 **Live Demo:** https://jadit-mergeminds.onrender.com/
+
+</div>
 
 ---
 
-**JADIT Merge Minds** is a next-generation collaborative IDE and team orchestration platform. It is built to solve the most painful bottleneck in modern software engineering: **human-agent-system collaboration sync**. 
+# 📖 Overview
 
-In conventional development, merge conflicts, silent lock-outs, and disconnected code reviews stall velocity. JADIT acts as a live, context-aware **Engineering Operating System** where developers collaborate in real-time, backed by an autonomous council of AI Agents that coordinate workspace state, predict conflict risks, scan for security flaws, and auto-repair broken builds.
+Software development is rapidly evolving from a human-only activity into a collaborative ecosystem involving developers, AI agents, cloud infrastructure, DevOps pipelines, and automation systems.
+
+While modern AI coding assistants can generate code, they still fail to solve one of the biggest challenges in engineering teams:
+
+## Team Coordination & Workspace Synchronization
+
+Developers continue to struggle with:
+
+- Merge conflicts discovered too late
+- Lack of visibility into teammate activity
+- Ownership collisions on shared codebases
+- Fragmented tooling spread across multiple platforms
+- Context switching between reviews, deployments, planning, and coding
+- AI assistants with limited project-wide awareness
+
+**JADIT Merge Minds** addresses these problems by transforming a traditional IDE into a **Collaborative Engineering Operating System** where developers and AI agents work together in a shared intelligent workspace.
+
+Rather than acting as a simple chatbot, JADIT introduces specialized engineering agents capable of:
+
+- Reviewing code
+- Planning features
+- Monitoring security risks
+- Managing deployments
+- Coordinating teams
+- Tracking workspace activity
+
+All inside a unified development environment.
 
 ---
 
-## 💡 The Core Vision & Idea
-Modern development is no longer just humans writing code—it's humans and AI agents co-authoring code. JADIT presents a cohesive pane-of-glass workspace where:
-1. **Real-time collaboration is the default:** Multi-user editing, cursor positions, and file states are synced live using Yjs and WebSockets.
-2. **AI acts as a peer and coordinator:** Instead of a simple chat panel, specialized AI agents act as Engineering Managers, QA reviewers, and DevOps guides.
-3. **Conflict is intercepted before it happens:** The interactive Workspace Map shows live editing heatmaps and active conflict risks, prompting developers to request ownership or lock files before rewriting code.
+# 🎯 Problem Statement
+
+Modern development teams face several recurring challenges:
+
+| Problem | Impact |
+|----------|---------|
+| Merge conflicts discovered late | Lost productivity |
+| Multiple developers editing the same file | Accidental overwrites |
+| Lack of workspace awareness | Team confusion |
+| Fragmented tooling | Constant context switching |
+| Limited AI understanding | Weak project-wide assistance |
+| Missing ownership management | Collaboration friction |
+
+Current IDEs and coding assistants focus primarily on code generation while ignoring collaborative engineering workflows.
 
 ---
 
-## 🧠 The JADIT Multi-Agent Council
+# 💡 Our Solution
 
-JADIT deploys a structured, specialized multi-agent architecture. Users can interact with or delegate tasks to five distinct agent personas:
+JADIT Merge Minds introduces an intelligent engineering workspace that combines:
 
-*   **📋 Manager Agent (`manager`):** Coordinates team context. Understands the current workspace structure, scans recent timeline events, and answers team alignment prompts like *"What happened?"* or *"Catch me up."*
-*   **🔍 Reviewer Agent (`reviewer`):** Inspects syntax, design patterns, and code style. It provides line-specific code improvements and structures reviews directly inside the active editor context.
-*   **🛡️ Security Agent (`security`):** Proactively checks files for vulnerabilities, hardcoded keys, and insecure APIs, flagging risk indicators.
-*   **📋 Planner Agent (`planner`):** Analyzes the state of the workspace and issues to build high-level implementation plans and checklists for the development lifecycle.
-*   **🚀 DevOps Agent (`devops`):** Manages project compilation, testing, and deployment. If a build fails (e.g. C++ compiler syntax errors), the DevOps Agent steps in to analyze the error logs, propose corrections, and execute **AI Auto-Fixes** directly on the file system.
+✅ Real-Time Collaboration
+
+✅ Multi-Agent AI Assistance
+
+✅ File Ownership Management
+
+✅ Conflict Prediction
+
+✅ Workspace Activity Replay
+
+✅ GitLab Integration
+
+✅ Deployment Support
+
+✅ Engineering Intelligence
+
+into a single platform.
 
 ---
 
-## ⚡ Robust Fallback & Internal Routing Architecture
+# ✨ Key Features
 
-A major challenge for production AI agents is **reliability**. Network drops, API credential corruption, or API demand spikes (such as HTTP 503 Service Unavailable or 429 Rate Limits) can brick a live system. 
+---
 
-JADIT solves this with an **internal fallback routing architecture**:
+## 🔄 Real-Time Collaborative Editing
 
+Powered by:
+
+- Yjs
+- WebSockets
+- Shared Workspace State
+
+Developers can collaborate on files simultaneously while maintaining synchronization across the entire workspace.
+
+### Benefits
+
+- Live updates
+- Real-time synchronization
+- Shared editing experience
+- Reduced communication overhead
+
+---
+
+## 🔒 Lock & File Ownership System
+
+Traditional IDEs allow developers to unknowingly overwrite each other's work.
+
+JADIT introduces deterministic file ownership management.
+
+### Workflow
+
+Developer A locks a file
+
+⬇
+
+Developer B attempts edit
+
+⬇
+
+Ownership request generated
+
+⬇
+
+Owner approves or rejects request
+
+⬇
+
+Workspace updates automatically
+
+### Advantages
+
+- Prevents accidental overwrites
+- Clear ownership visibility
+- Controlled transfer workflows
+- Reduced merge conflicts
+
+---
+
+## ⚠️ Conflict Intelligence Engine
+
+Rather than waiting for Git merge conflicts to occur, JADIT predicts collaboration risks before they become problematic.
+
+### Risk Levels
+
+🟢 Healthy
+
+Single-user editing environment.
+
+🟡 Conflict Risk
+
+Multiple developers interacting with related code sections.
+
+🔴 Active Conflict
+
+Simultaneous modifications detected.
+
+### Benefits
+
+- Early conflict detection
+- Better team awareness
+- Reduced integration pain
+
+---
+
+## 🗺️ Interactive Workspace Map
+
+A real-time SVG-powered visualization of project structure and developer activity.
+
+### Features
+
+- Dependency graph visualization
+- Active file indicators
+- Lock-state tracking
+- Collaboration hotspots
+- Dynamic updates
+
+### Benefits
+
+Developers instantly understand:
+
+- What files are active
+- Who is working where
+- Structural dependencies
+- Collaboration risk zones
+
+---
+
+## ⏳ Workspace Activity Replay
+
+Inspired by time-travel debugging.
+
+Every workspace event is recorded:
+
+- File Creation
+- File Deletion
+- File Modification
+- Ownership Transfers
+- Lock Events
+- Collaboration Actions
+
+Developers can replay workspace history using timeline controls.
+
+### Benefits
+
+- Better debugging
+- Team visibility
+- Historical project understanding
+
+---
+
+## ⌨️ Explorer Keyboard Delete
+
+Quick workspace management through keyboard shortcuts.
+
+Select any file and press:
+
+DELETE
+
+to remove it instantly with confirmation.
+
+---
+
+# 🧠 Multi-Agent Engineering Council
+
+Unlike traditional AI coding assistants, JADIT provides a specialized council of engineering agents.
+
+Each agent focuses on a dedicated engineering responsibility.
+
+---
+
+## 📋 Manager Agent
+
+### Role
+
+Engineering Manager
+
+### Responsibilities
+
+- Team coordination
+- Workspace summaries
+- Activity monitoring
+- Daily progress reports
+
+### Example Prompts
+
+"What changed today?"
+
+"Summarize workspace activity."
+
+"Which files were modified recently?"
+
+---
+
+## 🔍 Reviewer Agent
+
+### Role
+
+Senior Software Engineer
+
+### Responsibilities
+
+- Code reviews
+- Refactoring recommendations
+- Design pattern suggestions
+- Maintainability analysis
+
+### Example Prompts
+
+"Review this file."
+
+"Find code smells."
+
+"Suggest improvements."
+
+---
+
+## 🛡️ Security Agent
+
+### Role
+
+Application Security Engineer
+
+### Responsibilities
+
+- Secret scanning
+- Vulnerability detection
+- Credential exposure checks
+- Security recommendations
+
+### Example Prompts
+
+"Scan for vulnerabilities."
+
+"Check exposed credentials."
+
+---
+
+## 📅 Planner Agent
+
+### Role
+
+Technical Product Planner
+
+### Responsibilities
+
+- Sprint planning
+- Task breakdown
+- Feature roadmaps
+- Milestone generation
+
+### Example Prompts
+
+"Create an OAuth roadmap."
+
+"Break this feature into tasks."
+
+---
+
+## 🚀 DevOps Agent
+
+### Role
+
+Deployment Specialist
+
+### Responsibilities
+
+- Build diagnostics
+- Deployment monitoring
+- Environment validation
+- Failure analysis
+
+### Example Prompts
+
+"Why did deployment fail?"
+
+"Analyze build logs."
+
+---
+
+# ⚡ AI Provider Fallback Architecture
+
+Production systems require reliability.
+
+JADIT ensures uninterrupted AI assistance through an intelligent fallback routing layer.
+
+```text
+                     User Request
+                           │
+                           ▼
+                  Provider Router
+                           │
+         ┌─────────────────┴─────────────────┐
+         ▼                                   ▼
+
+ Google Agent Builder              Local Offline Agents
+      (Primary)                        (Fallback)
+
+         ▼                                   ▼
+
+                 Instant Agent Response
 ```
-                 [ User Prompt / IDE Command ]
-                             │
-                             ▼
-                 ┌───────────────────────┐
-                 │  Provider Router      │
-                 └───────────┬───────────┘
-                             │
-            ┌────────────────┴────────────────┐
-            ▼ (Primary Route)                 ▼ (Immediate Fallback)
-  ┌──────────────────┐               ┌──────────────────┐
-  │   Google Cloud   │               │   Custom Local   │
-  │  Agent Builder   │               │  Offline Agents  │
-  └─────────┬────────┘               └─────────┬────────┘
-            │                                  │
-            ▼ (If HTTP 503 / 429 / Error)      │
-            └────────────────►─────────────────┘
-                             │
-                             ▼
-                [ Instant Agent Response ]
+
+### Primary Engine
+
+- Gemini
+- Google Cloud Agent Builder
+- Vertex AI
+- GitLab MCP
+
+### Fallback Engine
+
+Custom Offline Agents
+
+Automatically activated when:
+
+- API limits occur
+- Network issues happen
+- Service disruptions occur
+- Credentials are unavailable
+
+### Benefits
+
+- High availability
+- Better reliability
+- Seamless experience
+- Zero workflow interruption
+
+---
+
+# 🏗️ High-Level Architecture
+
+```text
+                      Developers
+                           │
+                           ▼
+             ┌──────────────────────────┐
+             │      JADIT Frontend      │
+             │ Collaborative IDE Layer  │
+             └─────────────┬────────────┘
+                           │
+                           ▼
+             ┌──────────────────────────┐
+             │ Collaboration Engine     │
+             │ Yjs + WebSockets         │
+             └─────────────┬────────────┘
+                           │
+
+     ┌─────────────────────┼─────────────────────┐
+     ▼                     ▼                     ▼
+
+ Workspace Core     Multi-Agent AI      GitLab Integration
+
+     ▼                     ▼                     ▼
+
+ File Locks        Gemini Agents        GitLab APIs
+ Replay Engine     Context Memory       Issue Tracking
+ Activity Feed     Routing Layer        Merge Requests
 ```
 
-### Key Highlights of the Fallback System:
-1.  **Dual Engine Execution:**
-    *   **Primary Engine:** Google Cloud Agent Builder (Vertex AI) + GitLab MCP. Uses Google Cloud's agent reasoning framework and Gemini tool-calling to run file mutations, check project memory, and execute GitLab API workflows.
-    *   **Fallback Engine:** Custom Local Offline Agents. Instantly takes over if Google Cloud keys are missing, network connectivity is lost, or API limits occur, generating static/rule-based responses so the user experience is uninterrupted.
-2.  **Zero-Clutter UI Banners:** Provider routing operates silently under the hood. There are no distracting warning banners or fallback badges.
-3.  **Strict Developer Telemetry:** Logging occurs cleanly inside background consoles to let maintainers audit routing performance:
-    *   **Server Logs:** Every query outputs the active engine: `[AgentProvider] Gemini`, `[AgentProvider] GitLabMCP`, or `[AgentProvider] LocalFallback` (matching the Gemini agent logs).
-    *   **Browser Developer Console:** Extracted chunk metadata prints active provider traces live.
-    *   **Developer Diagnostics Panel:** Double-clicking the settings card header (`Workspace Parameters` or gear icon) reveals a hidden tab containing live GitLab MCP connection health and active routing telemetry.
+---
+
+# 🛠️ Technology Stack
+
+## Frontend
+
+- HTML5
+- CSS3
+- JavaScript
+- Monaco Editor
+- SVG Graph Engine
+
+## Backend
+
+- Node.js
+- Express.js
+
+## Real-Time Collaboration
+
+- Yjs
+- WebSockets
+
+## AI Layer
+
+- Gemini
+- Google Agent Framework
+- Agent Builder
+- Local Fallback Agents
+
+## DevOps & Integrations
+
+- GitLab APIs
+- GitLab MCP
+- GitLab Projects
+
+## Deployment
+
+- Render
+- Fly.io
+- Electron Desktop Wrapper
 
 ---
 
-## 🖥️ Live UI Capabilities
+# 🚀 Installation
 
-*   **🗺️ Interactive Workspace Map:** A real-time, auto-laying SVG node graph representing files and their import/dependency relationships. Editing files animates nodes, while locks or active conflicts highlight nodes in red/orange.
-*   **⏳ Workspace Activity Replay:** A timeline scrubbing engine. Use the slider or step controls to step backwards and forwards in time through all historical file modifications, creations, and locks.
-*   **🔒 Lock & File Ownership:** Files can be locked. If another developer edits a locked file, their edits are instantly reverted, and they are prompted to request file ownership. The lock owner receives a notification with inline **Approve** or **Reject** action buttons.
-*   **⌨️ Explorer Keyboard Delete:** Select a file in the workspace tree and press the `Delete` key on your keyboard to delete the file immediately (with browser confirmation), avoiding slow click pathways.
+## Prerequisites
 
----
+```bash
+Node.js v18+
+npm
+```
 
-## 🛠️ Step-by-Step Installation
+## Clone Repository
 
-### Prerequisites
-- Node.js (v18+)
-- npm
+```bash
+git clone https://github.com/JK2512/JADIT-MergeMinds.git
 
-### 1. Clone & Install
+cd JADIT-MergeMinds
+```
+
+## Install Dependencies
+
 ```bash
 npm install
 ```
 
-### 2. Environment Setup
-Configure your `.env` file at the root:
+---
+
+# ⚙️ Environment Configuration
+
+Create a `.env` file:
+
 ```env
 PORT=8080
-GEMINI_API_KEY=AIzaSy...
-# Optional GitLab Integration details
-GITLAB_API_URL=https://gitlab.example.com/api/v4
-GITLAB_ACCESS_TOKEN=glpat-...
-GITLAB_PROJECT_ID=123456
+
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+
+GITLAB_URL=https://gitlab.com
+
+GITLAB_API_URL=https://gitlab.com/api/v4
+
+GITLAB_PRIVATE_TOKEN=YOUR_TOKEN
+
+GITLAB_ACCESS_TOKEN=YOUR_TOKEN
+
+GITLAB_PROJECT_ID=YOUR_PROJECT_ID
 ```
 
-### 3. Run Locally
+---
 
-*   **Persistent Web Server:**
-    ```bash
-    npm start
-    ```
-    Visit `http://localhost:8080` in your web browser.
+# ▶️ Running Locally
 
-*   **Desktop Electron App Wrapper:**
-    In a separate terminal tab:
-    ```bash
-    npm run desktop
-    ```
+Start the application:
+
+```bash
+npm start
+```
+
+Visit:
+
+```text
+http://localhost:8080
+```
 
 ---
 
-## 🚀 Deployment Guide
-JADIT relies on WebSocket connections to synchronize editor states via Yjs. Because WebSockets require persistent connections, **traditional serverless hosts (like Vercel or Netlify static functions) are not supported**. Use stateful hosting platforms:
+# 🖥️ Electron Desktop Version
 
-### Option 1: Render (Easiest)
-1.  Connect your repository to [Render](https://render.com/).
-2.  Select **Web Service** node type.
-3.  Use build command: `npm install` and start command: `npm start`.
-4.  Define environment variables (e.g. `GEMINI_API_KEY`) under settings.
-5.  Deploy.
+Run:
 
-### Option 2: Fly.io
-1.  Run `fly launch` to automatically configure your Node environment.
-2.  Add secrets with `fly secrets set GEMINI_API_KEY=...`
-3.  Deploy using `fly deploy`.
+```bash
+npm run desktop
+```
 
 ---
 
-## 🛡️ License
-Licensed under the [MIT License](file:///c:/Users/Dell/OneDrive/Desktop/gitlabs/LICENSE).
+# 📸 Screenshots
+
+## Dashboard
+
+(Add Screenshot)
+
+---
+
+## Workspace Map
+
+(Add Screenshot)
+
+---
+
+## Multi-Agent Council
+
+(Add Screenshot)
+
+---
+
+## File Ownership Workflow
+
+(Add Screenshot)
+
+---
+
+## Activity Replay
+
+(Add Screenshot)
+
+---
+
+# 🏆 Innovation Highlights
+
+### 🚀 Collaborative Engineering Operating System
+
+Not just another IDE.
+
+### 🧠 Specialized Multi-Agent Council
+
+Dedicated AI expertise for every engineering task.
+
+### 🔒 Ownership Management
+
+Prevent accidental code collisions.
+
+### ⚠️ Conflict Intelligence Engine
+
+Predict problems before merges occur.
+
+### ⏳ Activity Replay System
+
+Time-travel through workspace history.
+
+### 🔄 Fallback AI Routing
+
+Reliable assistance even during provider outages.
+
+### 🔗 GitLab Native Integration
+
+Designed for real engineering workflows.
+
+---
+
+# 🔮 Future Roadmap
+
+## Phase 1
+
+- GitHub Integration
+- Advanced Conflict Resolution
+- Team Analytics Dashboard
+
+## Phase 2
+
+- Voice-Controlled Agents
+- Autonomous Pull Request Reviews
+- Agent-to-Agent Collaboration
+
+## Phase 3
+
+- Multi-Repository Workspaces
+- AI Sprint Planning
+- Autonomous Release Management
+
+---
+
+# 👩‍💻 Team
+
+Built for the **Building Agents for Real-World Challenges Hackathon**
+
+### Team JADIT
+
+- Jiya Kathuria
+- Contributors & Collaborators
+
+---
+
+# 📜 License
+
+MIT License
+
+Copyright (c) 2026 JADIT Merge Minds
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files to deal in the Software without restriction.
+
+See the LICENSE file for more information.
+
+---
+
+<div align="center">
+
+# ⭐ JADIT Merge Minds
+
+### Building the Future of Human-AI Software Engineering
+
+Where Developers and AI Agents Build Together.
+
+⭐ Star this repository if you found it useful!
+
+</div>
