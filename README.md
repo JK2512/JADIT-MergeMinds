@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# AI-Powered Collaborative Engineering Operating System
+# AI-Powered Collaborative Engineering IDE
 
 ### Built for the Building Agents for Real-World Challenges Hackathon
 
