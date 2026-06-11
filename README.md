@@ -569,9 +569,9 @@ npm run desktop
 ## File Ownership Workflow
 
 <img width="959" height="83" alt="image" src="https://github.com/user-attachments/assets/0250789b-34da-473b-aa24-a9a3a7bd98ce" />
-Request Ownership if someone else is owner of the file.
+- Request Ownership if someone else is owner of the file.
 <img width="724" height="434" alt="image" src="https://github.com/user-attachments/assets/7bb0e875-1cfa-40ab-8b9b-e5e2702d0ac9" />
-Lock if you are the file owner.
+- Lock if you are the file owner.
 
 ---
 
