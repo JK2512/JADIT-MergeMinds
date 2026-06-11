@@ -168,6 +168,7 @@ class WorkspaceApp {
       await this.updateProjectHealth();
       setInterval(() => this.updateProjectHealth(), 10000);
 
+      this.initKeyboardListeners();
     } catch (err) {
       console.error("CRITICAL STARTUP ERROR IN app.js:", err);
     }
@@ -257,6 +258,26 @@ class WorkspaceApp {
         document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
         settingsBtn.classList.add('active');
         document.getElementById('settings-modal')?.classList.remove('hidden');
+      }
+    });
+  }
+
+  initKeyboardListeners() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Delete') {
+        const active = document.activeElement;
+        if (active && (
+          active.tagName === 'INPUT' || 
+          active.tagName === 'TEXTAREA' || 
+          active.classList.contains('input') ||
+          active.closest('.monaco-editor') ||
+          active.isContentEditable
+        )) {
+          return; // Ignore if user is typing
+        }
+        if (this.currentFile) {
+          this.handleDeleteFile(this.currentFile);
+        }
       }
     });
   }
@@ -1386,6 +1407,28 @@ class WorkspaceApp {
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to delete file');
       }
+
+      // Update local state immediately for fast response / offline resilience
+      this.files = this.files.filter(f => f !== fileName);
+      delete this.fileContents[fileName];
+      delete this.lastCleanContent[fileName];
+
+      if (this.currentFile === fileName) {
+        const fallback = this.files[0] || 'main.js';
+        this.currentFile = fallback;
+        this.editor.bindDocument(this.fileContents[fallback] || '');
+        this.editor.setLanguageForFile(fallback);
+        this.layoutEditorSoon();
+        if (this.currentFileEl) {
+          this.currentFileEl.textContent = fallback;
+        }
+        this.updateEditorBreadcrumbs();
+      }
+
+      this.renderFileTabs();
+      this.renderFileExplorer();
+      this.refreshWorkspaceMap();
+
       this.notifications.show(`Deleted file ${fileName}`, 'success');
     } catch (err) {
       console.error(err);
@@ -2368,6 +2411,16 @@ class WorkspaceApp {
       settingsModal.addEventListener('click', (e) => {
         if (e.target === settingsModal) closeModal();
       });
+      const settingsHeader = settingsModal.querySelector('.settings-card-header');
+      if (settingsHeader) {
+        settingsHeader.addEventListener('dblclick', () => {
+          const devBtn = document.getElementById('tab-dev-btn');
+          if (devBtn) {
+            devBtn.style.display = 'block';
+            console.log('[DeveloperDiagnostics] Developer diagnostics tab enabled via title double-click.');
+          }
+        });
+      }
     }
 
     // 3. Load cache config theme

@@ -1197,7 +1197,13 @@ const localAgents = {
 };
 
 export async function routeAgentRequest(request, projectMemory) {
-  const agentType = routeAgent(request.message, request.agentId);
+  let agentType = routeAgent(request.message, request.agentId);
+  if (!agentType && request.forceLocal) {
+    agentType = request.agentId || 'manager';
+    if (agentType === 'cto' || agentType === 'pm') {
+      agentType = 'manager';
+    }
+  }
   if (!agentType) {
     console.log('[AgentRouter] no local route matched');
     return null;

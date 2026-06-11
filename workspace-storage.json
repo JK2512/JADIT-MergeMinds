@@ -1,12 +1,12 @@
 {
   "files": {
     "main.js": {
-      "content": "// Main Application Entry Point\n// JADIT  Hackathon Demo Project\n\nimport config from './config.js';\nimport { setupRoutes } from './api.js';\nimport { connectDatabase } from './database.js';\n\nasync function initialize() {\n  console.log(`Starting ${config.app.name} v${config.app.version}`);\n\n  try {\n    await connectDatabase();\n    const app = express();\n    setupRoutes(app);\n\n    app.listen(config.app.port, () => {\n      console.log(`Server running on port ${config.app.port}`);\n    });\n  } catch (error) {\n    console.error('Failed to start application:', error);\n    process.exit(1);\n  }\n}\n\ninitialize();\n",
-      "lastModified": "2026-06-11T10:58:19.939Z",
-      "lastModifiedBy": "disk",
-      "lineCount": 26,
-      "size": 609,
-      "version": 202
+      "content": "// Main Application Entry Point\n// JADIT  Hackathon Demo Project\n\nimport config from './config.js';\nimport { setupRoutes } from './api.js';\nimport { connectDatabase } from './database.js';\n\nasync function initialize() {\n  console.log(`Starting ${config.app.name} v${config.app.version}`);\n\n  try {\n    await connectDatabase();\n    const app = express();\n    setupRoutes(app);\n\n    app.listen(config.app.port, () => {\n      console.log(`Server running on port ${config.app.port}`);\n    });\n  } catch (error) {\n    console.error('Failed to start application:', error);\n    process.exit(1);\n  }\n}\n\ninitialize();\n// Main Application Entry Point\n// JADIT  Hackathon Demo Project\n\nimport config from './config.js';\nimport { setupRoutes } from './api.js';\nimport { connectDatabase } from './database.js';\n\nasync function initialize() {\n  console.log(`Starting ${config.app.name} v${config.app.version}`);\n\n  try {\n    await connectDatabase();\n    const app = express();\n    setupRoutes(app);\n\n    app.listen(config.app.port, () => {\n      console.log(`Server running on port ${config.app.port}`);\n    });\n  } catch (error) {\n    console.error('Failed to start application:', error);\n    process.exit(1);\n  }\n}\n\ninitialize();\n",
+      "lastModified": "2026-06-11T11:26:03.728Z",
+      "lastModifiedBy": "hiya",
+      "lineCount": 51,
+      "size": 1218,
+      "version": 210
     },
     "utils.js": {
       "content": "// Utility Functions\n// Shared helpers used across the project\n\nexport function formatDate(date) {\n  return new Intl.DateTimeFormat('en-US', {\n    year: 'numeric',\n    month: 'short',\n    day: 'numeric',\n    hour: '2-digit',\n    minute: '2-digit'\n  }).format(date);\n}\n\nexport function generateId() {\n  return Math.random().toString(36).substring(2, 9);\n}\n\nexport function debounce(fn, delay) {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\n\nexport function validateEmail(email) {\n  const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  return re.test(email);\n}\n\nexport function slugify(text) {\n  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');\n}\n\nexport function deepClone(obj) {\n  return JSON.parse(JSON.stringify(obj));\n}\n",
@@ -71,22 +71,6 @@
       "lineCount": 2,
       "size": 11,
       "version": 227
-    },
-    "tester.js": {
-      "content": "",
-      "lastModified": "2026-06-11T10:30:31.086Z",
-      "lastModifiedBy": "disk",
-      "lineCount": 1,
-      "size": 0,
-      "version": 2
-    },
-    "tester2.js": {
-      "content": "console.log(\"hello\");",
-      "lastModified": "2026-06-11T10:33:59.057Z",
-      "lastModifiedBy": "ai engineering manager",
-      "lineCount": 1,
-      "size": 21,
-      "version": 3
     }
   },
   "activityLog": [
@@ -7716,6 +7700,253 @@
       "target": "mm.js",
       "details": null,
       "timestamp": "2026-06-11T11:00:05.847Z"
+    },
+    {
+      "id": "mq9eu1d8xj4brts",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:24:22.508Z"
+    },
+    {
+      "id": "mq9euxk7ix4djbr",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:25:04.231Z"
+    },
+    {
+      "id": "mq9ev33mmcju7xb",
+      "user": "JK",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:25:11.410Z"
+    },
+    {
+      "id": "mq9ev47u0rgh2sl",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:25:12.858Z"
+    },
+    {
+      "id": "mq9evnx8t7851ly",
+      "user": "hiya",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:25:38.396Z"
+    },
+    {
+      "id": "mq9evpuhtusa0qd",
+      "user": "hiya",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:25:40.890Z"
+    },
+    {
+      "id": "mq9evtgcqrtk6c2",
+      "user": "hiya",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:25:45.564Z"
+    },
+    {
+      "id": "mq9evtnmkd1dhju",
+      "user": "system",
+      "action": "conflict_detected",
+      "target": "main.js",
+      "details": {
+        "level": "High",
+        "reason": "Multiple active users are editing the same file.",
+        "users": [
+          "JK",
+          "hiya"
+        ]
+      },
+      "timestamp": "2026-06-11T11:25:45.826Z"
+    },
+    {
+      "id": "mq9ew49b57hwa1k",
+      "user": "hiya",
+      "action": "edited",
+      "target": "main.js",
+      "details": {
+        "lineCount": 26,
+        "size": 608
+      },
+      "timestamp": "2026-06-11T11:25:59.567Z"
+    },
+    {
+      "id": "mq9ey7h5zmmo6no",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:27:37.049Z"
+    },
+    {
+      "id": "mq9eyep1q6vocqb",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:27:46.405Z"
+    },
+    {
+      "id": "mq9eyu1eazwt5db",
+      "user": "JK",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:28:06.290Z"
+    },
+    {
+      "id": "mq9eyv9aosypykm",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:28:07.870Z"
+    },
+    {
+      "id": "mq9eyztlysrelr9",
+      "user": "hiya",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:28:13.785Z"
+    },
+    {
+      "id": "mq9ezao0muswxp3",
+      "user": "system",
+      "action": "conflict_detected",
+      "target": "main.js",
+      "details": {
+        "level": "High",
+        "reason": "Multiple active users are editing the same file.",
+        "users": [
+          "JK",
+          "hiya"
+        ]
+      },
+      "timestamp": "2026-06-11T11:28:27.840Z"
+    },
+    {
+      "id": "mq9ezarbykikgw2",
+      "user": "JK",
+      "action": "opened",
+      "target": "database.js",
+      "details": null,
+      "timestamp": "2026-06-11T11:28:27.959Z"
+    },
+    {
+      "id": "mq9f3myj1c38lyd",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:31:50.395Z"
+    },
+    {
+      "id": "mq9f3n1dhwoe5vj",
+      "user": "system",
+      "action": "conflict_detected",
+      "target": "main.js",
+      "details": {
+        "level": "High",
+        "reason": "Multiple active users are editing the same file.",
+        "users": [
+          "hiya",
+          "JK"
+        ]
+      },
+      "timestamp": "2026-06-11T11:31:50.497Z"
+    },
+    {
+      "id": "mq9f76pgvghjbk5",
+      "user": "JK",
+      "action": "left",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:34:35.956Z"
+    },
+    {
+      "id": "mq9f7atur7kb0ok",
+      "user": "JK",
+      "action": "joined",
+      "target": "workspace",
+      "details": null,
+      "timestamp": "2026-06-11T11:34:41.298Z"
+    },
+    {
+      "id": "mq9f7b1dd9iag4t",
+      "user": "system",
+      "action": "conflict_detected",
+      "target": "main.js",
+      "details": {
+        "level": "High",
+        "reason": "Multiple active users are editing the same file.",
+        "users": [
+          "hiya",
+          "JK",
+          "JK"
+        ]
+      },
+      "timestamp": "2026-06-11T11:34:41.569Z"
+    },
+    {
+      "id": "mq9f7bl3i8oo4as",
+      "user": "JK",
+      "action": "opened",
+      "target": "tester2.js",
+      "details": null,
+      "timestamp": "2026-06-11T11:34:42.279Z"
+    },
+    {
+      "id": "mq9f7bs7kejs68z",
+      "user": "system",
+      "action": "conflict_detected",
+      "target": "main.js",
+      "details": {
+        "level": "High",
+        "reason": "Multiple active users are editing the same file.",
+        "users": [
+          "hiya",
+          "JK"
+        ]
+      },
+      "timestamp": "2026-06-11T11:34:42.535Z"
+    },
+    {
+      "id": "mq9f7guzotvlj50",
+      "user": "JK",
+      "action": "opened",
+      "target": "main.js",
+      "details": null,
+      "timestamp": "2026-06-11T11:34:49.115Z"
+    },
+    {
+      "id": "mq9f7gvfgnxot7b",
+      "user": "JK",
+      "action": "deleted_file",
+      "target": "tester2.js",
+      "details": null,
+      "timestamp": "2026-06-11T11:34:49.131Z"
+    },
+    {
+      "id": "mq9f7iie584vkwb",
+      "user": "JK",
+      "action": "opened",
+      "target": "tester.js",
+      "details": null,
+      "timestamp": "2026-06-11T11:34:51.254Z"
     }
   ],
   "userStats": {
@@ -7750,7 +7981,7 @@
       ]
     },
     "hiya": {
-      "edits": 105,
+      "edits": 113,
       "filesModified": [
         "main.js",
         "hello.cpp",
@@ -7828,7 +8059,7 @@
         "tester2.js"
       ],
       "activeBranch": "main",
-      "lastActivity": "2026-06-11T10:57:47.433Z"
+      "lastActivity": "2026-06-11T11:34:41.298Z"
     },
     "hiya": {
       "id": "mq8dcw09jtnzrw0",
@@ -7837,7 +8068,7 @@
       "team": "Management",
       "assignedFiles": [],
       "activeBranch": "main",
-      "lastActivity": "2026-06-11T10:59:02.204Z"
+      "lastActivity": "2026-06-11T11:28:13.785Z"
     },
     "Aman": {
       "id": "mq8gmekwscphiga",

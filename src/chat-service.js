@@ -68,98 +68,65 @@ async function runChatRequest(req, res, projectMemory) {
 
   const routedAgentResponse = await routeAgentRequest({ message, agentId, currentFile, currentFileContent, username }, projectMemory);
   if (routedAgentResponse?.text) {
-    console.log('[ChatService] AgentRouter response', {
-      agentType: routedAgentResponse.agentType,
-      source: routedAgentResponse.source
-    });
-    res.write(`data: ${JSON.stringify({ text: routedAgentResponse.text })}\n\n`);
+    const provider = routedAgentResponse.agentType === 'gitlab' ? 'GitLabMCP' : 'LocalFallback';
+    console.log(`[AgentProvider] ${provider}`);
+    res.write(`data: ${JSON.stringify({ text: routedAgentResponse.text, provider })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
     return;
   }
 
-  let attempts = 0;
-  let responseStream = null;
+  try {
+    console.log('[AgentProvider] Gemini');
+    const responseStream = await streamChat(message, projectMemory, history || [], agentId || 'manager');
+    let fullResponseText = '';
 
-  while (attempts < 2) {
+    for await (const chunk of responseStream) {
+      if (chunk.rateLimited) {
+        res.write(`data: ${JSON.stringify({ rateLimited: true, retryIn: chunk.retryIn })}\n\n`);
+      } else if (chunk.text) {
+        fullResponseText += chunk.text;
+        res.write(`data: ${JSON.stringify({ text: chunk.text, provider: 'Gemini' })}\n\n`);
+      }
+    }
+
+    // If it was a welcome request, cache the final generated text
+    if (isWelcomeRequest && username) {
+      welcomeSummaryCache.set(username, fullResponseText);
+    }
+
+    // Signal client that stream is complete
+    res.write('data: [DONE]\n\n');
+    res.end();
+
+  } catch (err) {
+    console.warn(`⚠️ [ChatService] Gemini streaming failed: ${err.message}. Falling back to local agent.`);
+    console.log('[AgentProvider] LocalFallback');
+
     try {
-      responseStream = await streamChat(message, projectMemory, history || [], agentId || 'manager');
-      break; // success, break out of retry loop
-    } catch (err) {
-      attempts++;
-      
-      const errorObj = err.error || err;
-      let isRateLimit = false;
-      let retryDelay = 60; // fallback
+      const fallbackResponse = await routeAgentRequest({
+        message,
+        agentId,
+        currentFile,
+        currentFileContent,
+        username,
+        forceLocal: true
+      }, projectMemory);
 
-      if (errorObj.status === 429 || errorObj.status === 'Too Many Requests' || errorObj.statusCode === 429 || errorObj.code === 429 || err.code === 429) {
-        isRateLimit = true;
-      }
-
-      if (errorObj.message) {
-        let messageText = errorObj.message;
-        if (typeof messageText === 'object') {
-          messageText = JSON.stringify(messageText);
-        }
-
-        try {
-          const parsedErr = JSON.parse(messageText);
-          const innerError = parsedErr.error || parsedErr;
-          if (innerError) {
-            if (innerError.code === 429 || innerError.status === 'RESOURCE_EXHAUSTED') {
-              isRateLimit = true;
-            }
-            const details = innerError.details || err.errorDetails;
-            if (Array.isArray(details)) {
-              const retryInfo = details.find(d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo' || d.retryDelay);
-              if (retryInfo && retryInfo.retryDelay) {
-                const match = retryInfo.retryDelay.match(/^([\d.]+)/);
-                if (match) {
-                  retryDelay = Math.ceil(parseFloat(match[1]));
-                }
-              }
-            }
-          }
-        } catch (parseErr) {
-          if (messageText.includes('429') || messageText.includes('RESOURCE_EXHAUSTED')) {
-            isRateLimit = true;
-          }
-        }
-      }
-
-      if (isRateLimit && attempts < 2) {
-
-        console.warn(`⚠️ [ChatService] Gemini rate limited (429). Retrying in ${retryDelay} seconds...`);
-        res.write(`data: ${JSON.stringify({ rateLimited: true, retryIn: retryDelay })}\n\n`);
-
-        // Wait for the specified delay
-        await new Promise(r => setTimeout(r, retryDelay * 1000));
+      if (fallbackResponse?.text) {
+        res.write(`data: ${JSON.stringify({ 
+          text: `⚠️ [Local Agent Fallback Engaged - Gemini API Unavailable]\n\n${fallbackResponse.text}`, 
+          provider: 'LocalFallback' 
+        })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
       } else {
-        // Non-rate limit error or ran out of attempts, rethrow to be caught by outer block
         throw err;
       }
+    } catch (fallbackErr) {
+      throw err;
     }
   }
-
-  // Consume stream chunks and write SSE data lines
-  let fullResponseText = '';
-  for await (const chunk of responseStream) {
-    if (chunk.rateLimited) {
-      res.write(`data: ${JSON.stringify({ rateLimited: true, retryIn: chunk.retryIn })}\n\n`);
-    } else if (chunk.text) {
-      fullResponseText += chunk.text;
-      res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
-    }
-  }
-
-  // If it was a welcome request, cache the final generated text
-  if (isWelcomeRequest && username) {
-    welcomeSummaryCache.set(username, fullResponseText);
-  }
-
-  // Signal client that stream is complete
-  res.write('data: [DONE]\n\n');
-  res.end();
 }
 
 /**

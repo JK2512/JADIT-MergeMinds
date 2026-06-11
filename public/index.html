@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🐰 JADIT — Hackathon Command Center</title>
-  
+  <title>🐰 JADIT Merge Minds — Hackathon Command Center</title>
+
   <!-- Premium UI Stylesheet -->
   <link rel="stylesheet" href="/css/styles.css">
-  
+
   <!-- Google Fonts: Inter, Outfit, and JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
   <!-- Monaco Editor Loader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
 </head>
+
 <body class="theme-glassmorphism">
 
   <!-- Background Animated Canvas Element -->
@@ -25,7 +29,7 @@
   <div id="username-modal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-logo">🐰</div>
-      <h2>JADIT</h2>
+      <h2>JADIT Merge Minds</h2>
       <p>AI Engineering Manager Platform</p>
       <input type="text" id="username-input" placeholder="e.g. Pilot Alex" maxlength="18" autofocus autocomplete="off">
       <button id="username-submit">Sync Command Node</button>
@@ -42,7 +46,7 @@
         </div>
         <button id="settings-modal-close" class="settings-close-btn">&times;</button>
       </div>
-      
+
       <div class="settings-card-body">
         <!-- Settings Navigation Tabs -->
         <div class="settings-sidebar">
@@ -50,11 +54,14 @@
           <button class="settings-tab-btn" data-tab="tab-workspace">💻 Workspace</button>
           <button class="settings-tab-btn" data-tab="tab-personality">🧠 Personality</button>
           <button class="settings-tab-btn" data-tab="tab-snapshot">💾 Snapshot & Demo</button>
+          <button class="settings-tab-btn" id="tab-dev-btn" data-tab="tab-developer"
+            style="display: none; background: rgba(243,156,18,0.08); color:#f39c12; border-left: 2px solid #f39c12; font-weight: bold; font-size: 9px; padding: 4px 6px;">⚙️
+            Dev Diagnostics</button>
         </div>
-        
+
         <!-- Settings Content Areas -->
         <div class="settings-content">
-          
+
           <!-- Tab 1: Theme & Colors -->
           <div class="settings-pane active" id="tab-appearance">
             <div class="settings-group">
@@ -71,7 +78,7 @@
                 <option value="glassmorphism">Glassmorphism</option>
               </select>
             </div>
-            
+
             <div class="settings-group">
               <label>Accent Color Picker</label>
               <div class="accent-presets">
@@ -82,12 +89,13 @@
                 <div class="accent-preset preset-orange" data-preset="#f15bb5" title="Pink"></div>
                 <div class="accent-preset preset-pink" data-preset="#fc6d26" title="GitLab Orange"></div>
               </div>
-              <div class="custom-accent-container" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+              <div class="custom-accent-container"
+                style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
                 <label for="setting-accent" style="font-size: 11px; margin-bottom: 0;">Custom Color</label>
                 <input type="color" id="setting-accent" value="#fc6d26" class="setting-color-picker">
               </div>
             </div>
-            
+
             <div class="settings-group">
               <div class="setting-label-row">
                 <label for="setting-transparency">Glass Intensity</label>
@@ -103,12 +111,14 @@
               </div>
               <input type="range" id="setting-blur" min="0" max="30" value="12" class="setting-slider">
             </div>
-            
+
             <div class="settings-group" style="padding-top: 12px; margin-top: 8px;">
-              <button class="settings-action-btn" id="btn-reset-appearance" style="background: rgba(248, 81, 73, 0.15); border-color: rgba(248, 81, 73, 0.3); color: #ff8b8b; font-weight: bold; width: 100%;">🔄 Reset Appearance</button>
+              <button class="settings-action-btn" id="btn-reset-appearance"
+                style="background: rgba(248, 81, 73, 0.15); border-color: rgba(248, 81, 73, 0.3); color: #ff8b8b; font-weight: bold; width: 100%;">🔄
+                Reset Appearance</button>
             </div>
           </div>
-          
+
           <!-- Tab 2: Workspace -->
           <div class="settings-pane" id="tab-workspace">
             <div class="settings-group">
@@ -150,7 +160,7 @@
               </div>
               <input type="range" id="setting-glow-intensity" min="0" max="100" value="80" class="setting-slider">
             </div>
-            
+
 
 
             <div class="settings-group">
@@ -166,7 +176,7 @@
               </select>
             </div>
           </div>
-          
+
           <!-- Tab 3: Personality -->
           <div class="settings-pane" id="tab-personality">
             <div class="settings-group">
@@ -179,10 +189,11 @@
                 <option value="cto">💡 Startup CTO (Velocity & MVP Scale)</option>
                 <option value="pm">📅 Product Manager (Issues & Releases)</option>
               </select>
-              <p class="setting-info-text">Switching the active persona shifts both the AI's guidance system prompts and greeting messages dynamically.</p>
+              <p class="setting-info-text">Switching the active persona shifts both the AI's guidance system prompts and
+                greeting messages dynamically.</p>
             </div>
           </div>
-          
+
           <!-- Tab 4: Snapshot & Demo -->
           <div class="settings-pane" id="tab-snapshot">
             <div class="settings-group">
@@ -195,69 +206,116 @@
               </div>
               <input type="file" id="profile-upload" style="display: none;" accept=".json">
             </div>
-            
+
 
 
             <div class="settings-group" style="border-bottom: none; padding-top: 10px;">
               <label style="font-weight: 700; color: #ff6b6b;">🔥 Live Hackathon Demo Scenarios</label>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
-                <button class="settings-action-btn" id="btn-trigger-fail" style="background: rgba(248, 81, 73, 0.2); border-color: rgba(248, 81, 73, 0.4); color: #ff8b8b; font-weight: bold;">Trigger Fail State</button>
-                <button class="settings-action-btn" id="btn-reset-demo" style="background: rgba(0, 245, 109, 0.15); border-color: rgba(0, 245, 109, 0.3); color: #8bffb2;">Reset Clean State</button>
+                <button class="settings-action-btn" id="btn-trigger-fail"
+                  style="background: rgba(248, 81, 73, 0.2); border-color: rgba(248, 81, 73, 0.4); color: #ff8b8b; font-weight: bold;">Trigger
+                  Fail State</button>
+                <button class="settings-action-btn" id="btn-reset-demo"
+                  style="background: rgba(0, 245, 109, 0.15); border-color: rgba(0, 245, 109, 0.3); color: #8bffb2;">Reset
+                  Clean State</button>
               </div>
               <span style="font-size: 9px; color: var(--text-muted); display: block; margin-top: 6px;">
-                Triggering the fail state writes syntax errors to hi.cpp, breaks the pipeline build, and adds blocker items to showcase real-time AI auto-fix repair.
+                Triggering the fail state writes syntax errors to hi.cpp, breaks the pipeline build, and adds blocker
+                items to showcase real-time AI auto-fix repair.
               </span>
             </div>
           </div>
-          
+
+          <!-- Tab 5: Developer Diagnostics -->
+          <div class="settings-pane" id="tab-developer">
+            <div class="settings-group" style="border-bottom: none;">
+              <label>JADIT Agent Provider Diagnostics</label>
+              <div
+                style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border); font-family: var(--font-mono); font-size: 11px; margin-top: 8px; line-height: 1.7;">
+                <div>🚀 Target Platform: <strong style="color: #2ecc71;">JADIT</strong></div>
+                <div>🧠 Active Provider: <span id="dev-active-provider"
+                    style="color: #3498db; font-weight: bold;">Gemini 2.5 Flash</span></div>
+                <div>🦊 GitLab MCP Status: <span id="dev-mcp-status"
+                    style="color: #e67e22; font-weight: bold;">Unknown</span></div>
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 8px 0;">
+                <div style="font-weight: bold; margin-bottom: 4px;">Routing Architecture:</div>
+                <div style="color: var(--text-secondary); font-size: 10.5px;">
+                  - Natural Language -> Gemini 2.5 Flash (Primary)<br>
+                  - Commands -> Local Static Engines (Fallback)<br>
+                  - GitLab Operations -> GitLab MCP Server
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   </div>
   <!-- ═══ Workspace Replay Modal ════════════════════════════════ -->
   <div id="replay-modal" class="modal-overlay hidden">
-    <div class="settings-card glassmorphic-panel" style="width: 520px; height: 380px; display: flex; flex-direction: column; overflow: hidden; background: rgba(20, 20, 30, 0.94);">
-      <div class="settings-card-header" style="flex-shrink: 0; padding: 12px 16px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between;">
+    <div class="settings-card glassmorphic-panel"
+      style="width: 520px; height: 380px; display: flex; flex-direction: column; overflow: hidden; background: rgba(20, 20, 30, 0.94);">
+      <div class="settings-card-header"
+        style="flex-shrink: 0; padding: 12px 16px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between;">
         <div class="settings-card-title" style="display: flex; align-items: center; gap: 8px;">
           <span>⏳</span>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; text-transform: uppercase;">Workspace Activity Replay</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; text-transform: uppercase;">
+            Workspace Activity Replay</h3>
         </div>
-        <button id="replay-modal-close" class="settings-close-btn" style="background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer;">&times;</button>
+        <button id="replay-modal-close" class="settings-close-btn"
+          style="background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer;">&times;</button>
       </div>
-      
-      <div class="settings-card-body" style="flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px; overflow-y: auto;">
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border); flex-shrink: 0;">
+
+      <div class="settings-card-body"
+        style="flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px; overflow-y: auto;">
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border); flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <button id="replay-btn-play" style="background: var(--accent-gradient); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: transform 0.15s ease;">▶</button>
+            <button id="replay-btn-play"
+              style="background: var(--accent-gradient); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: transform 0.15s ease;">▶</button>
             <div>
-              <span id="replay-status-lbl" style="font-weight: 700; font-size: 11px; color: #fff; display: block; line-height: 1.2;">Paused</span>
-              <span id="replay-time-lbl" style="font-size: 9px; color: var(--text-muted); display: block;">Event 0 of 0</span>
+              <span id="replay-status-lbl"
+                style="font-weight: 700; font-size: 11px; color: #fff; display: block; line-height: 1.2;">Paused</span>
+              <span id="replay-time-lbl" style="font-size: 9px; color: var(--text-muted); display: block;">Event 0 of
+                0</span>
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button id="replay-btn-prev" class="settings-action-btn" style="font-size: 9.5px; padding: 4px 8px;">◀ Step</button>
-            <button id="replay-btn-next" class="settings-action-btn" style="font-size: 9.5px; padding: 4px 8px;">Step ▶</button>
+            <button id="replay-btn-prev" class="settings-action-btn" style="font-size: 9.5px; padding: 4px 8px;">◀
+              Step</button>
+            <button id="replay-btn-next" class="settings-action-btn" style="font-size: 9.5px; padding: 4px 8px;">Step
+              ▶</button>
           </div>
         </div>
-        
+
         <!-- Slider -->
         <div class="settings-group" style="padding-bottom: 6px; border: none; flex-shrink: 0;">
-          <input type="range" id="replay-slider" min="0" max="0" value="0" style="width: 100%; cursor: pointer;" class="setting-slider">
+          <input type="range" id="replay-slider" min="0" max="0" value="0" style="width: 100%; cursor: pointer;"
+            class="setting-slider">
         </div>
-        
+
         <!-- Active Event Card -->
-        <div style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; text-align: left;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; flex-shrink: 0;">
-            <span id="replay-event-action" style="font-weight: 700; font-size: 10px; text-transform: uppercase; color: var(--accent-color);">NO EVENT</span>
-            <span id="replay-event-time" style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">-</span>
+        <div
+          style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; text-align: left;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; flex-shrink: 0;">
+            <span id="replay-event-action"
+              style="font-weight: 700; font-size: 10px; text-transform: uppercase; color: var(--accent-color);">NO
+              EVENT</span>
+            <span id="replay-event-time"
+              style="font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);">-</span>
           </div>
           <div style="font-size: 11px; line-height: 1.4; flex-shrink: 0;">
-            <span style="color: var(--text-muted);">Actor: </span><span id="replay-event-user" style="font-weight: 600; color: #fff;">-</span>
+            <span style="color: var(--text-muted);">Actor: </span><span id="replay-event-user"
+              style="font-weight: 600; color: #fff;">-</span>
           </div>
           <div style="font-size: 11px; line-height: 1.4; flex-shrink: 0;">
-            <span style="color: var(--text-muted);">Target: </span><span id="replay-event-target" style="font-family: var(--font-mono); color: #fff;">-</span>
+            <span style="color: var(--text-muted);">Target: </span><span id="replay-event-target"
+              style="font-family: var(--font-mono); color: #fff;">-</span>
           </div>
-          <div id="replay-event-details" style="flex: 1; font-size: 10px; color: var(--text-secondary); background: rgba(0,0,0,0.15); padding: 8px; border-radius: 6px; font-family: var(--font-mono); white-space: pre-wrap; overflow-y: auto; margin-top: 4px;">
+          <div id="replay-event-details"
+            style="flex: 1; font-size: 10px; color: var(--text-secondary); background: rgba(0,0,0,0.15); padding: 8px; border-radius: 6px; font-family: var(--font-mono); white-space: pre-wrap; overflow-y: auto; margin-top: 4px;">
             No activity events recorded yet.
           </div>
         </div>
@@ -267,7 +325,7 @@
 
   <!-- ═══ Main Application Layout ═══════════════════════════════ -->
   <div class="app-layout">
-    
+
     <!-- ─── Header ─────────────────────────────────────────────── -->
     <header class="header">
       <div class="header-left">
@@ -281,7 +339,7 @@
           <span class="room-name">hackathon-demo</span>
         </div>
       </div>
-      
+
       <div class="header-center">
         <div class="search-bar-container">
           <span class="search-icon">🔍</span>
@@ -289,7 +347,7 @@
           <span class="search-badge">⌘K</span>
         </div>
       </div>
-      
+
       <div class="header-right">
         <!-- Live Action Wave Sparkline -->
         <div class="sparkline-icon-container" title="System Load telemetry">
@@ -299,7 +357,8 @@
         </div>
         <!-- Notification indicator -->
         <div class="notification-indicator-btn" title="Alert logs">
-          <svg class="bell-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="bell-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2"
+            fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
@@ -316,7 +375,7 @@
 
     <!-- ─── Main Content Area ──────────────────────────────────── -->
     <div class="workspace-container">
-      
+
       <!-- Vertical Navigation Icons (VS Code Style) -->
       <aside class="sidebar-nav">
         <div class="nav-links">
@@ -377,7 +436,8 @@
               <span class="action-separator"></span>
               <button id="ide-lock-btn" class="ide-action-btn hidden" title="Lock File">🔒 Lock</button>
               <button id="ide-unlock-btn" class="ide-action-btn hidden" title="Unlock File">🔓 Unlock</button>
-              <button id="ide-request-ownership-btn" class="ide-action-btn hidden" title="Request Ownership">🔑 Request Ownership</button>
+              <button id="ide-request-ownership-btn" class="ide-action-btn hidden" title="Request Ownership">🔑 Request
+                Ownership</button>
             </div>
             <div class="file-info">
               <span id="current-file">main.js</span>
@@ -391,7 +451,7 @@
               <!-- Dynamically populated -->
             </div>
           </div>
-          
+
           <div class="editor-container-wrapper">
             <div id="editor-container"></div>
           </div>
@@ -404,7 +464,9 @@
             <!-- Terminal Panel -->
             <section class="grid-panel terminal-panel" id="panel-terminal">
               <div class="panel-header">
-                <div class="panel-title"><h4>TERMINAL</h4></div>
+                <div class="panel-title">
+                  <h4>TERMINAL</h4>
+                </div>
                 <div class="panel-header-actions">
                   <button class="panel-action-btn" id="terminal-clear-btn">🧹</button>
                 </div>
@@ -424,9 +486,12 @@
             <!-- Activity Feed (Task 7) -->
             <section class="grid-panel activity-panel" id="panel-activity-feed">
               <div class="panel-header">
-                <div class="panel-title"><h4>ACTIVITY FEED</h4></div>
+                <div class="panel-title">
+                  <h4>ACTIVITY FEED</h4>
+                </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <button class="settings-action-btn" id="btn-workspace-replay" style="font-size: 9px; padding: 2px 8px;">⏳ Replay</button>
+                  <button class="settings-action-btn" id="btn-workspace-replay"
+                    style="font-size: 9px; padding: 2px 8px;">⏳ Replay</button>
                 </div>
               </div>
               <div class="panel-body">
@@ -442,7 +507,9 @@
         <!-- Workspace Map (Task 4 - Reduced) -->
         <section class="grid-panel workspace-map-mini" id="panel-workspace-map">
           <div class="panel-header">
-            <div class="panel-title"><h4>WORKSPACE MAP</h4></div>
+            <div class="panel-title">
+              <h4>WORKSPACE MAP</h4>
+            </div>
             <div class="map-controls">
               <button class="panel-action-btn" id="map-zoom-out" title="Zoom Out">-</button>
               <button class="panel-action-btn" id="map-zoom-in" title="Zoom In">+</button>
@@ -457,12 +524,15 @@
             </div>
           </div>
         </section>
-        <div class="right-panel-resizer" data-resize-before="panel-workspace-map" data-resize-after="panel-ai-agents"></div>
+        <div class="right-panel-resizer" data-resize-before="panel-workspace-map" data-resize-after="panel-ai-agents">
+        </div>
 
         <!-- AI Agents (Task 6 - Compressed) -->
         <section class="grid-panel ai-agents-mini" id="panel-ai-agents">
           <div class="panel-header">
-            <div class="panel-title"><h4>AI AGENTS</h4></div>
+            <div class="panel-title">
+              <h4>AI AGENTS</h4>
+            </div>
             <span class="panel-header-badge" id="active-agent-count-badge">5 Active</span>
           </div>
           <div class="panel-body">
@@ -471,11 +541,14 @@
             </div>
           </div>
         </section>
-        <div class="right-panel-resizer" data-resize-before="panel-ai-agents" data-resize-after="panel-mission-brief"></div>
+        <div class="right-panel-resizer" data-resize-before="panel-ai-agents" data-resize-after="panel-mission-brief">
+        </div>
 
         <section class="grid-panel mission-brief-mini" id="panel-mission-brief">
           <div class="panel-header">
-            <div class="panel-title"><h4>MISSION BRIEF</h4></div>
+            <div class="panel-title">
+              <h4>MISSION BRIEF</h4>
+            </div>
             <span class="panel-header-badge" id="health-rating">Loading</span>
           </div>
           <div class="panel-body mission-brief-body">
@@ -497,12 +570,15 @@
             </div>
           </div>
         </section>
-        <div class="right-panel-resizer" data-resize-before="panel-mission-brief" data-resize-after="panel-ask-ai"></div>
+        <div class="right-panel-resizer" data-resize-before="panel-mission-brief" data-resize-after="panel-ask-ai">
+        </div>
 
         <!-- AI Chat -->
         <section class="grid-panel ai-chat-panel" id="panel-ask-ai">
           <div class="panel-header">
-            <div class="panel-title"><h4>ASK AI</h4></div>
+            <div class="panel-title">
+              <h4>ASK AI</h4>
+            </div>
             <div class="panel-header-actions">
               <select id="chat-agent-selector" class="setting-select compact-agent-select">
                 <option value="manager">Manager</option>
@@ -511,8 +587,10 @@
                 <option value="security">Security</option>
                 <option value="planner">Planner</option>
               </select>
-              <button class="settings-action-btn" id="chat-clear-btn" style="font-size: 9px; padding: 2px 8px;">Clear</button>
-              <button class="settings-action-btn" id="btn-team-consult" style="font-size: 9px; padding: 2px 8px;">👥 Team Consult</button>
+              <button class="settings-action-btn" id="chat-clear-btn"
+                style="font-size: 9px; padding: 2px 8px;">Clear</button>
+              <button class="settings-action-btn" id="btn-team-consult" style="font-size: 9px; padding: 2px 8px;">👥
+                Team Consult</button>
             </div>
           </div>
           <div class="panel-body chat-panel-body">
@@ -521,10 +599,14 @@
               <div class="chat-input-area">
                 <div class="suggested-prompts" id="suggested-prompts">
                   <button class="quick-action-btn" data-agent="manager" data-prompt="Catch me up">⚡ Catch Me Up</button>
-                  <button class="quick-action-btn" data-agent="reviewer" data-prompt="Review current file">🔍 Review Current File</button>
-                  <button class="quick-action-btn" data-agent="devops" data-prompt="Can we deploy?">🚀 Can We Deploy?</button>
-                  <button class="quick-action-btn" data-agent="security" data-prompt="Security scan">🛡 Security Scan</button>
-                  <button class="quick-action-btn" data-agent="planner" data-prompt="What's next?">📋 What's Next?</button>
+                  <button class="quick-action-btn" data-agent="reviewer" data-prompt="Review current file">🔍 Review
+                    Current File</button>
+                  <button class="quick-action-btn" data-agent="devops" data-prompt="Can we deploy?">🚀 Can We
+                    Deploy?</button>
+                  <button class="quick-action-btn" data-agent="security" data-prompt="Security scan">🛡 Security
+                    Scan</button>
+                  <button class="quick-action-btn" data-agent="planner" data-prompt="What's next?">📋 What's
+                    Next?</button>
                 </div>
                 <div class="chat-textarea-container">
                   <textarea class="chat-input" id="chat-input" placeholder="Ask AI..." rows="1"></textarea>
@@ -554,20 +636,22 @@
 
     </div>
 
-  <!-- ═══ Ownership Approval Modal ══════════════════════════════ -->
-  <div id="ownership-approval-modal" class="modal-overlay hidden">
-    <div class="modal-card ownership-approval-card">
-      <div class="modal-logo">🔑</div>
-      <h2>Ownership Request</h2>
-      <p id="ownership-request-description">A user has requested ownership of this file.</p>
-      <div style="display: flex; gap: 10px; margin-top: 20px; width: 100%;">
-        <button id="ownership-approve-btn" style="flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: var(--success); color: #000;">Approve</button>
-        <button id="ownership-reject-btn" style="flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: var(--danger); color: #fff;">Reject</button>
+    <!-- ═══ Ownership Approval Modal ══════════════════════════════ -->
+    <div id="ownership-approval-modal" class="modal-overlay hidden">
+      <div class="modal-card ownership-approval-card">
+        <div class="modal-logo">🔑</div>
+        <h2>Ownership Request</h2>
+        <p id="ownership-request-description">A user has requested ownership of this file.</p>
+        <div style="display: flex; gap: 10px; margin-top: 20px; width: 100%;">
+          <button id="ownership-approve-btn"
+            style="flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: var(--success); color: #000;">Approve</button>
+          <button id="ownership-reject-btn"
+            style="flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: var(--danger); color: #fff;">Reject</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ─── Footer Status Bar ──────────────────────────────────── -->
+    <!-- ─── Footer Status Bar ──────────────────────────────────── -->
     <footer class="status-bar">
       <div class="status-left">
         <div class="status-indicator status-disconnected" id="status-indicator">
@@ -593,4 +677,5 @@
   <script type="module" src="/js/app.js?v=sync-cursor-1"></script>
 
 </body>
+
 </html>

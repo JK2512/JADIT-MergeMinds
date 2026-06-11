@@ -88,6 +88,9 @@ export class AIPanel {
 
     // Render initial welcome help message
     this.renderHelpMessage();
+
+    // Check GitLab MCP Health for developer diagnostics
+    this.checkGitLabHealth();
   }
 
   bindOptionalAction(el, id, queryText) {
@@ -311,6 +314,14 @@ export class AIPanel {
             if (parsed.rateLimited) {
               this.showRateLimitCountdown(parsed.retryIn);
             } else if (parsed.text) {
+              if (parsed.provider) {
+                console.log(`[AgentProvider] ${parsed.provider}`);
+                const devActiveProvider = document.getElementById('dev-active-provider');
+                if (devActiveProvider) {
+                  devActiveProvider.textContent = parsed.provider === 'Gemini' ? 'Gemini 2.5 Flash' : (parsed.provider === 'GitLabMCP' ? 'GitLab MCP Server' : 'Local Fallback Agent');
+                  devActiveProvider.style.color = parsed.provider === 'Gemini' ? '#2ecc71' : (parsed.provider === 'GitLabMCP' ? '#3498db' : '#e74c3c');
+                }
+              }
               onChunk(parsed.text);
             } else if (parsed.error) {
               throw new Error(parsed.error);
@@ -433,6 +444,29 @@ export class AIPanel {
     }).join('');
 
     return html;
+  }
+
+  async checkGitLabHealth() {
+    const devMcpStatus = document.getElementById('dev-mcp-status');
+    try {
+      const res = await fetch('/api/gitlab/health');
+      if (res.ok) {
+        if (devMcpStatus) {
+          devMcpStatus.textContent = 'Connected';
+          devMcpStatus.style.color = '#2ecc71';
+        }
+      } else {
+        if (devMcpStatus) {
+          devMcpStatus.textContent = 'Offline';
+          devMcpStatus.style.color = '#e67e22';
+        }
+      }
+    } catch (err) {
+      if (devMcpStatus) {
+        devMcpStatus.textContent = 'Offline / Error';
+        devMcpStatus.style.color = '#e74c3c';
+      }
+    }
   }
 }
 export default AIPanel;

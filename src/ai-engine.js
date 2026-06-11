@@ -153,33 +153,16 @@ export async function* streamChat(userMessage, projectMemory, history = [], agen
 
     console.log(`💬 [AIEngine] Dispatching chat query to gemini-2.5-flash. Context size: ~${contextText.length} chars.`);
 
-    // 4. Request streaming content from Gemini with tools (with rate-limiting retry)
-    let responseStream = null;
-    let attempts = 0;
-    while (attempts < 2) {
-      try {
-        responseStream = await client.models.generateContentStream({
-          model: 'gemini-2.5-flash',
-          contents: contents,
-          config: {
-            systemInstruction: systemInstruction,
-            temperature: 0.2, // Slightly lower temp for technical tasks
-            tools: [{ functionDeclarations: toolRegistry.getDeclarations() }]
-          }
-        });
-        break;
-      } catch (err) {
-        attempts++;
-        const { isRateLimit, retryDelay } = parseRateLimitError(err);
-        if (isRateLimit && attempts < 2) {
-          console.warn(`⚠️ [AIEngine] Gemini rate limited (429) on initial call. Retrying in ${retryDelay} seconds...`);
-          yield { rateLimited: true, retryIn: retryDelay };
-          await new Promise(r => setTimeout(r, retryDelay * 1000));
-        } else {
-          throw err;
-        }
+    // 4. Request streaming content from Gemini with tools
+    const responseStream = await client.models.generateContentStream({
+      model: 'gemini-2.5-flash',
+      contents: contents,
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.2, // Slightly lower temp for technical tasks
+        tools: [{ functionDeclarations: toolRegistry.getDeclarations() }]
       }
-    }
+    });
 
     let functionCalls = [];
     for await (const chunk of responseStream) {
@@ -227,32 +210,15 @@ export async function* streamChat(userMessage, projectMemory, history = [], agen
 
       console.log(`💬 [AIEngine] Sending function response back to Gemini for: ${functionCalls.map(c => c.name).join(', ')}`);
 
-      let nextStream = null;
-      let nextAttempts = 0;
-      while (nextAttempts < 2) {
-        try {
-          nextStream = await client.models.generateContentStream({
-            model: 'gemini-2.5-flash',
-            contents: contents,
-            config: {
-              systemInstruction: systemInstruction,
-              temperature: 0.2,
-              tools: [{ functionDeclarations: toolRegistry.getDeclarations() }]
-            }
-          });
-          break;
-        } catch (err) {
-          nextAttempts++;
-          const { isRateLimit, retryDelay } = parseRateLimitError(err);
-          if (isRateLimit && nextAttempts < 2) {
-            console.warn(`⚠️ [AIEngine] Gemini rate limited (429) on tool response turn. Retrying in ${retryDelay} seconds...`);
-            yield { rateLimited: true, retryIn: retryDelay };
-            await new Promise(r => setTimeout(r, retryDelay * 1000));
-          } else {
-            throw err;
-          }
+      const nextStream = await client.models.generateContentStream({
+        model: 'gemini-2.5-flash',
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.2,
+          tools: [{ functionDeclarations: toolRegistry.getDeclarations() }]
         }
-      }
+      });
 
       functionCalls = [];
       for await (const chunk of nextStream) {
